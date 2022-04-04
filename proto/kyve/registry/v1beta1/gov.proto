@@ -1,4 +1,5 @@
 syntax = "proto3";
+
 package kyve.registry.v1beta1;
 
 option go_package = "github.com/KYVENetwork/chain/x/registry/types";
@@ -6,67 +7,67 @@ option go_package = "github.com/KYVENetwork/chain/x/registry/types";
 // CreatePoolProposal is a gov Content type for creating a pool.
 message CreatePoolProposal {
   // title ...
-  string title           = 1;
+  string title = 1;
   // description ...
-  string description     = 2;
+  string description = 2;
   // name ...
-  string name            = 3;
+  string name = 3;
   // runtime ...
-  string runtime         = 4;
+  string runtime = 4;
   // logo ...
-  string logo            = 5;
+  string logo = 5;
   // versions ...
-  string versions        = 6;
+  string versions = 6;
   // config ...
-  string config          = 7;
+  string config = 7;
   // start_height ...
-  uint64 start_height    = 8;
+  uint64 start_height = 8;
   // min_bundle_size ...
   uint64 min_bundle_size = 9;
   // operating_cost ...
-  uint64 operating_cost  = 10;
+  uint64 operating_cost = 10;
 }
 
 // UpdatePoolProposal is a gov Content type for updating a pool.
 message UpdatePoolProposal {
   // title ...
-  string title           = 1;
+  string title = 1;
   // description ...
-  string description     = 2;
+  string description = 2;
   // id ...
-  uint64 id              = 3;
+  uint64 id = 3;
   // name ...
-  string name            = 4;
+  string name = 4;
   // runtime ...
-  string runtime         = 5;
+  string runtime = 5;
   // logo ...
-  string logo            = 6;
+  string logo = 6;
   // versions ...
-  string versions        = 7;
+  string versions = 7;
   // config ...
-  string config          = 8;
+  string config = 8;
   // min_bundle_size ...
   uint64 min_bundle_size = 9;
   // operating_cost ...
-  uint64 operating_cost  = 10;
+  uint64 operating_cost = 10;
 }
 
 // PausePoolProposal is a gov Content type for pausing a pool.
 message PausePoolProposal {
   // title ...
-  string title           = 1;
+  string title = 1;
   // description ...
-  string description     = 2;
+  string description = 2;
   // id ...
-  uint64 id              = 3;
+  uint64 id = 3;
 }
 
 // UnpausePoolProposal is a gov Content type for unpausing a pool.
 message UnpausePoolProposal {
   // title ...
-  string title           = 1;
+  string title = 1;
   // description ...
-  string description     = 2;
+  string description = 2;
   // id ...
-  uint64 id              = 3;
+  uint64 id = 3;
 }

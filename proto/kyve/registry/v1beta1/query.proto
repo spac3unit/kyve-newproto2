@@ -1,4 +1,5 @@
 syntax = "proto3";
+
 package kyve.registry.v1beta1;
 
 import "cosmos/base/query/v1beta1/pagination.proto";
@@ -154,25 +155,25 @@ message QueryPoolsRequest {
   // pagination defines an optional pagination for the request.
   cosmos.base.query.v1beta1.PageRequest pagination = 1;
   // search ...
-  string                                search     = 2;
+  string search = 2;
   // runtime ...
-  string                                runtime    = 3;
+  string runtime = 3;
   // paused ...
-  bool                                  paused     = 4;
+  bool paused = 4;
 }
 
 // QueryPoolsResponse is the response type for the Query/Pools RPC method.
 message QueryPoolsResponse {
   // pools ...
-  repeated                               kyve.registry.v1beta1.Pool pools = 1 [(gogoproto.nullable) = false];
+  repeated kyve.registry.v1beta1.Pool pools = 1 [(gogoproto.nullable) = false];
   // pagination defines the pagination in the response.
-  cosmos.base.query.v1beta1.PageResponse pagination                       = 2;
+  cosmos.base.query.v1beta1.PageResponse pagination = 2;
 }
 
 // QueryFundingAmountRequest is the request type for the Query/FundingAmount RPC method.
 message QueryFundingAmountRequest {
   // id defines the unique ID of the pool.
-  uint64 id     = 1;
+  uint64 id = 1;
   // funder ...
   string funder = 2;
 }
@@ -186,7 +187,7 @@ message QueryFundingAmountResponse {
 // QueryStakingAmountRequest is the request type for the Query/StakingAmount RPC method.
 message QueryStakingAmountRequest {
   // id defines the unique ID of the pool.
-  uint64 id     = 1;
+  uint64 id = 1;
   // staker ...
   string staker = 2;
 }
@@ -224,13 +225,13 @@ message QueryStakersListResponse {
 // StakerResponse ...
 message StakerResponse {
   // staker ...
-  string staker           = 1;
+  string staker = 1;
   // pool_id ...
-  uint64 pool_id          = 2;
+  uint64 pool_id = 2;
   // account ...
-  string account          = 3;
+  string account = 3;
   // amount ...
-  uint64 amount           = 4;
+  uint64 amount = 4;
   // unbonding_amount ...
   uint64 unbonding_amount = 5;
   // total_delegation ...
@@ -264,15 +265,15 @@ message QueryProposalsRequest {
   // pagination defines an optional pagination for the request.
   cosmos.base.query.v1beta1.PageRequest pagination = 1;
   // pool_id ...
-  uint64                                pool_id    = 2;
+  uint64 pool_id = 2;
 }
 
 // QueryProposalsResponse is the response type for the Query/Proposals RPC method.
 message QueryProposalsResponse {
   // proposals ...
-  repeated                               kyve.registry.v1beta1.Proposal proposals = 1 [(gogoproto.nullable) = false];
+  repeated kyve.registry.v1beta1.Proposal proposals = 1 [(gogoproto.nullable) = false];
   // pagination defines the pagination in the response.
-  cosmos.base.query.v1beta1.PageResponse pagination                               = 2;
+  cosmos.base.query.v1beta1.PageResponse pagination = 2;
 }
 
 // QueryProposalByHeightRequest is the request type for the Query/ProposalByHeight RPC method.
@@ -280,7 +281,7 @@ message QueryProposalByHeightRequest {
   // pool_id ...
   uint64 pool_id = 1;
   // height ...
-  uint64 height  = 2;
+  uint64 height = 2;
 }
 
 // QueryProposalResponse is the response type for the Query/ProposalByHeight RPC method.
@@ -294,7 +295,7 @@ message QueryProposalByHeightResponse {
 // QueryCanProposeRequest is the request type for the Query/CanPropose RPC method.
 message QueryCanProposeRequest {
   // pool_id defines the unique ID of the pool.
-  uint64 pool_id   = 1;
+  uint64 pool_id = 1;
   // proposer ...
   string proposer = 2;
 }
@@ -302,17 +303,17 @@ message QueryCanProposeRequest {
 // QueryCanProposeResponse is the response type for the Query/CanPropose RPC method.
 message QueryCanProposeResponse {
   // possible ...
-  bool   possible = 1;
+  bool possible = 1;
   // reason ...
-  string reason   = 2;
+  string reason = 2;
 }
 
 // QueryCanVoteRequest is the request type for the Query/CanVote RPC method.
 message QueryCanVoteRequest {
   // pool_id defines the unique ID of the pool.
-  uint64 pool_id   = 1;
+  uint64 pool_id = 1;
   // voter ...
-  string voter     = 2;
+  string voter = 2;
   // bundle_id ...
   string bundle_id = 3;
 }
@@ -320,9 +321,9 @@ message QueryCanVoteRequest {
 // QueryCanVoteResponse is the response type for the Query/CanVote RPC method.
 message QueryCanVoteResponse {
   // possible ...
-  bool   possible = 1;
+  bool possible = 1;
   // reason ...
-  string reason   = 2;
+  string reason = 2;
 }
 
 // STATS FOR USER ACCOUNT
@@ -358,27 +359,27 @@ message QueryAccountFundedListRequest {
   // pagination defines an optional pagination for the request.
   cosmos.base.query.v1beta1.PageRequest pagination = 1;
   // address ...
-  string                                address    = 2;
+  string address = 2;
 }
 
 // QueryAccountFundedListResponse is the response type for the Query/AccountFundedList RPC method.
 message QueryAccountFundedListResponse {
   // funded ...
-  repeated                               kyve.registry.v1beta1.Funded funded = 1 [(gogoproto.nullable) = false];
+  repeated kyve.registry.v1beta1.Funded funded = 1 [(gogoproto.nullable) = false];
   // pagination defines the pagination in the response.
-  cosmos.base.query.v1beta1.PageResponse pagination                          = 2;
+  cosmos.base.query.v1beta1.PageResponse pagination = 2;
 }
 
 // Funded ...
 message Funded {
   // fund_id ...
-  string                     fund_id = 1;
+  string fund_id = 1;
   // account ...
-  string                     account = 2;
+  string account = 2;
   // amount ...
-  uint64                     amount  = 3;
+  uint64 amount = 3;
   // pool ...
-  kyve.registry.v1beta1.Pool pool    = 4;
+  kyve.registry.v1beta1.Pool pool = 4;
 }
 
 // QueryAccountStakedListRequest is the request type for the Query/AccountStakedList RPC method.
@@ -386,31 +387,31 @@ message QueryAccountStakedListRequest {
   // pagination defines an optional pagination for the request.
   cosmos.base.query.v1beta1.PageRequest pagination = 1;
   // address ...
-  string                                address    = 2;
+  string address = 2;
 }
 
 // QueryAccountStakedListResponse is the response type for the Query/StakedList RPC method.
 message QueryAccountStakedListResponse {
   // staked ...
-  repeated                               Staked staked = 1 [(gogoproto.nullable) = false];
+  repeated Staked staked = 1 [(gogoproto.nullable) = false];
   // pagination defines the pagination in the response.
-  cosmos.base.query.v1beta1.PageResponse pagination    = 2;
+  cosmos.base.query.v1beta1.PageResponse pagination = 2;
 }
 
 // Staked ...
 message Staked {
   // staker ...
-  string                     staker           = 1;
+  string staker = 1;
   // pool_id ...
-  uint64                     pool_id          = 2;
+  uint64 pool_id = 2;
   // account ...
-  string                     account          = 3;
+  string account = 3;
   // amount ...
-  uint64                     amount           = 4;
+  uint64 amount = 4;
   // unbonding_amount
-  uint64                     unbonding_amount = 5;
+  uint64 unbonding_amount = 5;
   // pool ...
-  kyve.registry.v1beta1.Pool pool             = 6;
+  kyve.registry.v1beta1.Pool pool = 6;
 }
 
 // QueryAccountDelegationListRequest is the request type for the Query/AccountDelegationList RPC method.
@@ -418,31 +419,29 @@ message QueryAccountDelegationListRequest {
   // pagination defines an optional pagination for the request.
   cosmos.base.query.v1beta1.PageRequest pagination = 1;
   // address ...
-  string                                address    = 2;
+  string address = 2;
 }
 
 // QueryAccountDelegationListRequest is the response type for the Query/AccountDelegationList RPC method.
 message QueryAccountDelegationListResponse {
   // delegations ...
-  repeated                               kyve.registry.v1beta1.DelegatorResponse delegations = 1 [
-    (gogoproto.nullable) = false
-  ];
+  repeated kyve.registry.v1beta1.DelegatorResponse delegations = 1 [(gogoproto.nullable) = false];
   // pagination defines the pagination in the response.
-  cosmos.base.query.v1beta1.PageResponse pagination                                          = 2;
+  cosmos.base.query.v1beta1.PageResponse pagination = 2;
 }
 
 // DelegatorResponse ...
 message DelegatorResponse {
   // account ...
-  string                                   account              = 1;
+  string account = 1;
   // pool ...
-  kyve.registry.v1beta1.Pool               pool                 = 2;
+  kyve.registry.v1beta1.Pool pool = 2;
   // current_reward ...
-  uint64                                   current_reward       = 3;
+  uint64 current_reward = 3;
   // delegation_amount ...
-  uint64                                   delegation_amount    = 4;
+  uint64 delegation_amount = 4;
   // staker ...
-  string                                   staker               = 5;
+  string staker = 5;
   // delegation_pool_data ...
   kyve.registry.v1beta1.DelegationPoolData delegation_pool_data = 6;
 }
@@ -454,9 +453,9 @@ message QueryDelegatorRequest {
   // delegator ...
   string delegator = 1;
   // staker ...
-  string staker    = 2;
+  string staker = 2;
   // pool_id defines the unique ID of the pool.
-  uint64 pool_id   = 3;
+  uint64 pool_id = 3;
 }
 
 // QueryDelegatorResponse is the response type for the Query/Delegator RPC method.
@@ -470,35 +469,33 @@ message QueryAccountStakersDelegationListRequest {
   // pagination defines an optional pagination for the request.
   cosmos.base.query.v1beta1.PageRequest pagination = 1;
   // pool_id ...
-  uint64                                pool_id    = 2;
+  uint64 pool_id = 2;
   // staker ...
-  string                                staker     = 3;
+  string staker = 3;
 }
 
 // QueryAccountStakersDelegationListResponse is the response type for the Query/AccountStakersDelegationList RPC method.
 message QueryAccountStakersDelegationListResponse {
   // delegators ...
-  repeated                                 kyve.registry.v1beta1.StakerDelegatorResponse delegators = 1 [
-    (gogoproto.nullable) = false
-  ];
+  repeated kyve.registry.v1beta1.StakerDelegatorResponse delegators = 1 [(gogoproto.nullable) = false];
   // pool ...
-  kyve.registry.v1beta1.Pool               pool                                                     = 2;
+  kyve.registry.v1beta1.Pool pool = 2;
   // delegation_pool_data ...
-  kyve.registry.v1beta1.DelegationPoolData delegation_pool_data                                     = 3;
+  kyve.registry.v1beta1.DelegationPoolData delegation_pool_data = 3;
   // pagination defines the pagination in the response.
-  cosmos.base.query.v1beta1.PageResponse   pagination                                               = 4;
+  cosmos.base.query.v1beta1.PageResponse pagination = 4;
 }
 
 // StakerDelegatorResponse ...
 message StakerDelegatorResponse {
   // delegator ...
-  string delegator         = 1;
+  string delegator = 1;
   // current_reward ...
-  uint64 current_reward    = 2;
+  uint64 current_reward = 2;
   // delegation_amount ...
   uint64 delegation_amount = 3;
   // staker ...
-  string staker            = 4;
+  string staker = 4;
 }
 
 // QueryStakersByPoolAndDelegatorRequest  is the request type for the Query/StakersByPoolAndDelegator RPC method.
@@ -506,54 +503,49 @@ message QueryStakersByPoolAndDelegatorRequest {
   // pagination defines an optional pagination for the request.
   cosmos.base.query.v1beta1.PageRequest pagination = 1;
   // pool_id ...
-  uint64                                pool_id    = 2;
+  uint64 pool_id = 2;
   // delegator ...
-  string                                delegator  = 3;
+  string delegator = 3;
 }
 
 // QueryStakersByPoolAndDelegatorResponse  is the response type for the Query/StakersByPoolAndDelegator RPC method.
 message QueryStakersByPoolAndDelegatorResponse {
   // delegator ...
-  string                                 delegator                                                 = 1;
+  string delegator = 1;
   // pool ...
-  kyve.registry.v1beta1.Pool             pool                                                      = 2;
+  kyve.registry.v1beta1.Pool pool = 2;
   // stakers ...
-  repeated                               kyve.registry.v1beta1.DelegationForStakerResponse stakers = 3 [
-    (gogoproto.nullable) = false
-  ];
+  repeated kyve.registry.v1beta1.DelegationForStakerResponse stakers = 3 [(gogoproto.nullable) = false];
   // pagination defines the pagination in the response.
-  cosmos.base.query.v1beta1.PageResponse pagination                                                = 4;
+  cosmos.base.query.v1beta1.PageResponse pagination = 4;
 }
 
 // DelegationForStakerResponse ...
 message DelegationForStakerResponse {
   // staker ...
-  string staker                  = 1;
+  string staker = 1;
   // current_reward ...
-  uint64   current_reward        = 2;
+  uint64 current_reward = 2;
   // delegation_amount ...
-  uint64 delegation_amount       = 3;
+  uint64 delegation_amount = 3;
   // total_delegation_amount ...
   uint64 total_delegation_amount = 4;
   // delegator_count ...
-  uint64 delegator_count         = 5;
+  uint64 delegator_count = 5;
 }
-
 
 // QueryUnbondingEntriesByDelegatorRequest ...
 message QueryAccountUnbondingsRequest {
   // pagination defines an optional pagination for the request.
   cosmos.base.query.v1beta1.PageRequest pagination = 1;
   // delegator ...
-  string                                address  = 2;
+  string address = 2;
 }
 
 // QueryUnbondingEntriesByDelegatorResponse ...
 message QueryAccountUnbondingsResponse {
   // unbonding_entries ...
-  repeated                               kyve.registry.v1beta1.UnbondingEntries unbonding_entries = 1 [
-    (gogoproto.nullable) = false
-  ];
+  repeated kyve.registry.v1beta1.UnbondingEntries unbonding_entries = 1 [(gogoproto.nullable) = false];
   // pagination defines the pagination in the response.
-  cosmos.base.query.v1beta1.PageResponse pagination                                                = 2;
+  cosmos.base.query.v1beta1.PageResponse pagination = 2;
 }
