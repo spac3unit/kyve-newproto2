@@ -1,0 +1,80 @@
+accounts:
+  - name: dummy
+    mnemonic: "expect crisp umbrella hospital firm exhibit future size slot update blood deliver fat happy ghost visa recall usual path purity junior ring ordinary stove"
+  - name: alice
+    coins: ["2000000000000000tkyve"]
+    mnemonic: "worry grief loyal smoke pencil arrow trap focus high pioneer tomato hedgehog essence purchase dove pond knee custom phone gentle sunset addict mother fabric"
+  - name: bob
+    coins: ["1000000000000000tkyve"]
+    mnemonic: "crash sick toilet stumble join cash erode glory door weird diagram away lizard solid segment apple urge joy annual able tank define candy demise"
+  - name: charlie
+    coins: ["1000000000000000tkyve"]
+    mnemonic: "shoot inject fragile width trend satisfy army enact volcano crowd message strike true divorce search rich office shoulder sport relax rhythm symbol gadget size"
+  - name: faucet
+    coins: ["1000000000000000tkyve"]
+    mnemonic: "open home share route party lake room solution quantum pact model avocado humor dilemma review desert turtle total humor produce rate keen eagle fee"
+client:
+  openapi:
+    path: "docs/static/openapi.yml"
+faucet:
+  name: faucet
+  coins: ["1000000000000000tkyve"]
+genesis:
+  chain_id: "kyve-local"
+  app_state:
+    staking:
+      params:
+        bond_denom: "tkyve"
+    gov:
+      voting_params:
+        # 2 minutes
+        voting_period: "120s"
+      deposit_params:
+        min_deposit: [
+          {
+            denom: "tkyve",
+            # 500 $KYVE
+            amount: "500000000000"
+          }
+        ]
+    registry:
+      pool_count: "1"
+      pool_list: [
+        {
+          bytes_archived: "0",
+          config: "{\"rpc\":\"https://rpc.api.moonbeam.network\",\"github\":\"https://github.com/KYVENetwork/evm\"}",
+          creator: "gov",
+          funders: [ ],
+          height_archived: "0",
+          id: "0",
+          logo: "9FJDam56yBbmvn8rlamEucATH5UcYqSBw468rlCXn8E",
+          lowest_funder: "",
+          lowest_staker: "",
+          min_bundle_size: "100",
+          name: "Moonbeam",
+          operating_cost: "100",
+          paused: false,
+          runtime: "@kyve/evm",
+          stakers: [ ],
+          start_height: "0",
+          total_bundle_rewards: "0",
+          total_bundles: "0",
+          total_delegation: "0",
+          total_funds: "0",
+          total_stake: "0",
+          versions: "\u003e=0.0.0",
+          bundle_proposal:
+            bundle_id: ""
+            byte_size: "0"
+            created_at: "0"
+            from_height: "0"
+            next_uploader: ""
+            to_height: "0"
+            uploader: ""
+            voters_invalid: [ ]
+            voters_valid: [ ]
+        }
+      ]
+validator:
+  name: alice
+  staked: "1000000000000000tkyve"

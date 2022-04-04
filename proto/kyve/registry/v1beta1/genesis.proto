@@ -1,0 +1,54 @@
+syntax = "proto3";
+package kyve.registry.v1beta1;
+
+import "gogoproto/gogo.proto";
+import "kyve/registry/v1beta1/params.proto";
+import "kyve/registry/v1beta1/registry.proto";
+
+option go_package = "github.com/KYVENetwork/chain/x/registry/types";
+
+// GenesisState defines the registry module's genesis state.
+message GenesisState {
+  // params defines all the parameters of the module.
+  kyve.registry.v1beta1.Params         params                                                             = 1 [
+    (gogoproto.nullable) = false
+  ];
+  // pool_list ...
+  repeated                             kyve.registry.v1beta1.Pool               pool_list                 = 2 [
+    (gogoproto.nullable) = false
+  ];
+  // pool_count ...
+  uint64                               pool_count                                                         = 3;
+  // funder_list ...
+  repeated                             kyve.registry.v1beta1.Funder             funder_list               = 4 [
+    (gogoproto.nullable) = false
+  ];
+  // staker_list ...
+  repeated                             kyve.registry.v1beta1.Staker             staker_list               = 5 [
+    (gogoproto.nullable) = false
+  ];
+  // delegator_list ...
+  repeated                             kyve.registry.v1beta1.Delegator          delegator_list            = 6 [
+    (gogoproto.nullable) = false
+  ];
+  // delegation_pool_data_list ...
+  repeated                             kyve.registry.v1beta1.DelegationPoolData delegation_pool_data_list = 7 [
+    (gogoproto.nullable) = false
+  ];
+  // delegation_entries_list ...
+  repeated                             kyve.registry.v1beta1.DelegationEntries  delegation_entries_list   = 8 [
+    (gogoproto.nullable) = false
+  ];
+  // proposal_list ...
+  repeated                             kyve.registry.v1beta1.Proposal           proposal_list             = 9 [
+    (gogoproto.nullable) = false
+  ];
+  // unbonding_state ...
+  kyve.registry.v1beta1.UnbondingState unbonding_state                                                    = 10 [
+    (gogoproto.nullable) = false
+  ];
+  // unbonding_entries ...
+  repeated                             kyve.registry.v1beta1.UnbondingEntries   unbonding_entries         = 11 [
+    (gogoproto.nullable) = false
+  ];
+}

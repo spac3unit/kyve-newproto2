@@ -1,0 +1,24 @@
+syntax = "proto3";
+package kyve.registry.v1beta1;
+
+import "gogoproto/gogo.proto";
+
+option go_package = "github.com/KYVENetwork/chain/x/registry/types";
+
+// Params defines the set of params for the registry module.
+message Params {
+  option (gogoproto.goproto_stringer) = false;
+
+  // vote_slash ...
+  string vote_slash     = 3;
+  // upload_slash ...
+  string upload_slash   = 4;
+  // timeout_slash ...
+  string timeout_slash  = 5;
+  // upload_timeout ...
+  uint64 upload_timeout = 6;
+  // storage_cost ...
+  uint64 storage_cost   = 7;
+  // network_fee ...
+  string network_fee    = 8;
+}

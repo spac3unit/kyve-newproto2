@@ -1,0 +1,17 @@
+on: push
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      # Run `git checkout`
+      - uses: actions/checkout@v3
+      # Install the `buf` CLI
+      - uses: bufbuild/buf-setup-action@v1
+        with:
+          github_token: ${{ github.token }}
+      # Lint Protobuf files
+      - uses: bufbuild/buf-lint-action@v1
+        with:
+          input: proto
+          buf_token: ${{ secrets.BUF_BUILD_TOKEN }}
