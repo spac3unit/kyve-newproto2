@@ -114,12 +114,12 @@ func (f1 F1Distribution) Undelegate() (undelegatedAmount uint64) {
 
 	// Init default data-set, if this is the first delegator
 	if !found {
-		panic("No delegationData although somebody is delegating")
+		f1.k.PanicHalt(f1.ctx, "No delegationData although somebody is delegating")
 	}
 
 	delegator, found := f1.k.GetDelegator(f1.ctx, f1.poolId, f1.stakerAddress, f1.delegatorAddress)
 	if !found {
-		panic("Not a delegator")
+		f1.k.PanicHalt(f1.ctx, "Not a delegator")
 	}
 
 	_, indexF := f1.updateEntries(delegationPoolData.LatestIndexK, delegationPoolData.CurrentRewards,
@@ -161,12 +161,12 @@ func (f1 F1Distribution) Withdraw() (reward uint64) {
 
 	// Init default data-set, if this is the first delegator
 	if !found {
-		panic("No delegationData although somebody is delegating")
+		f1.k.PanicHalt(f1.ctx, "No delegationData although somebody is delegating")
 	}
 
 	delegator, found := f1.k.GetDelegator(f1.ctx, f1.poolId, f1.stakerAddress, f1.delegatorAddress)
 	if !found {
-		panic("Not a delegator")
+		f1.k.PanicHalt(f1.ctx, "Not a delegator")
 	}
 
 	entryFBalance, indexF := f1.updateEntries(delegationPoolData.LatestIndexK, delegationPoolData.CurrentRewards,
@@ -183,7 +183,7 @@ func (f1 F1Distribution) Withdraw() (reward uint64) {
 	//Calculate Reward
 	f1K, found := f1.k.GetDelegationEntries(f1.ctx, f1.poolId, f1.stakerAddress, delegator.KIndex)
 	if !found {
-		panic("Delegator does not have entry")
+		f1.k.PanicHalt(f1.ctx, "Delegator does not have entry")
 	}
 
 	//Remove Old entry
@@ -203,13 +203,13 @@ func (f1 F1Distribution) getCurrentReward() (reward uint64) {
 
 	delegator, found := f1.k.GetDelegator(f1.ctx, f1.poolId, f1.stakerAddress, f1.delegatorAddress)
 	if !found {
-		panic("Not a delegator")
+		f1.k.PanicHalt(f1.ctx, "Not a delegator")
 	}
 
 	// Fetch metadata
 	delegationPoolData, found := f1.k.GetDelegationPoolData(f1.ctx, f1.poolId, f1.stakerAddress)
 	if !found {
-		panic("No delegationData although somebody is delegating")
+		f1.k.PanicHalt(f1.ctx, "No delegationData although somebody is delegating")
 	}
 
 	// get last but one entry for F1Distribution, init with zero if it is the first delegator
@@ -234,7 +234,7 @@ func (f1 F1Distribution) getCurrentReward() (reward uint64) {
 	//Calculate Reward
 	f1K, found := f1.k.GetDelegationEntries(f1.ctx, f1.poolId, f1.stakerAddress, delegator.KIndex)
 	if !found {
-		panic("Delegator does not have entry")
+		f1.k.PanicHalt(f1.ctx, "Delegator does not have entry")
 	}
 
 	f1kBalance, _ := sdk.NewDecFromStr(f1K.Balance)

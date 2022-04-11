@@ -22,13 +22,10 @@ func (k msgServer) ClaimUploaderRole(
 	if !found {
 		return nil, sdkErrors.Wrapf(sdkErrors.ErrNotFound, types.ErrPoolNotFound.Error(), msg.Id)
 	}
+
 	// Error if the pool isn't in "genesis state".
 	if pool.BundleProposal.NextUploader != "" {
 		return nil, sdkErrors.Wrap(sdkErrors.ErrUnauthorized, types.ErrUploaderAlreadyClaimed.Error())
-	}
-	// Error if the pool is paused.
-	if pool.Paused {
-		return nil, sdkErrors.Wrap(sdkErrors.ErrUnauthorized, types.ErrPoolPaused.Error())
 	}
 
 	// Check if the sender is a protocol node (aka has staked into this pool).
@@ -37,8 +34,24 @@ func (k msgServer) ClaimUploaderRole(
 		return nil, sdkErrors.Wrap(sdkErrors.ErrUnauthorized, types.ErrNoStaker.Error())
 	}
 
+	// Check if enough nodes are online
+	if len(pool.Stakers) < 2 {
+		return nil, sdkErrors.Wrap(types.ErrNotEnoughNodesOnline, types.ErrNoStaker.Error())
+	}
+
+	// Check if pool is funded
+	if pool.TotalFunds == 0 {
+		return nil, sdkErrors.Wrap(types.ErrFundsTooLow, types.ErrNoStaker.Error())
+	}
+
+	// Error if the pool is paused.
+	if pool.Paused {
+		return nil, sdkErrors.Wrap(sdkErrors.ErrUnauthorized, types.ErrPoolPaused.Error())
+	}
+
 	// Update and return.
 	pool.BundleProposal.NextUploader = msg.Creator
+	pool.BundleProposal.CreatedAt = uint64(ctx.BlockTime().Unix())
 	k.SetPool(ctx, pool)
 
 	return &types.MsgClaimUploaderRoleResponse{}, nil

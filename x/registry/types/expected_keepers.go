@@ -3,6 +3,7 @@ package types
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/auth/types"
+	upgradeTypes "github.com/cosmos/cosmos-sdk/x/upgrade/types"
 )
 
 type AccountKeeper interface {
@@ -19,4 +20,8 @@ type BankKeeper interface {
 
 type DistrKeeper interface {
 	FundCommunityPool(ctx sdk.Context, amount sdk.Coins, sender sdk.AccAddress) error
+}
+
+type UpgradeKeeper interface {
+	ScheduleUpgrade(ctx sdk.Context, plan upgradeTypes.Plan) error
 }

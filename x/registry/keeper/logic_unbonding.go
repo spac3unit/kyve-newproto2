@@ -91,52 +91,52 @@ func (u Unbond) CheckAndPerformUndelegation() (count uint64, error error) {
 			if unbondingEntry.Staker == unbondingEntry.Delegator {
 				// Handle case if delegator performed self-delegation
 
-				stakerEntry, stakerShouldExist := u.K.GetStaker(u.Ctx, unbondingEntry.Staker, unbondingEntry.PoolId)
-				if !stakerShouldExist {
-					// Staker was already removed.
-					continue
+				stakerEntry, stakerExists := u.K.GetStaker(u.Ctx, unbondingEntry.Staker, unbondingEntry.PoolId)
+				// if staker still exists perform the unstaking.
+				// Otherwise, do nothing as he has already received his funds
+				if stakerExists {
+
+					pool, poolShouldExist := u.K.GetPool(u.Ctx, unbondingEntry.PoolId)
+					if !poolShouldExist {
+						u.K.PanicHalt(u.Ctx, "Pool should exist")
+					}
+
+					// Check if user got slashed during unbonding.
+					// If user does now have less stake than in the unbonding entry
+					// correct the UnbondingAmount to the stakers Amount
+					if stakerEntry.UnbondingAmount > stakerEntry.Amount {
+						unbondingEntry.Amount = stakerEntry.Amount
+					}
+
+					if stakerEntry.Amount == unbondingEntry.Amount {
+						u.K.removeStaker(u.Ctx, &pool, &stakerEntry)
+					} else {
+						// Remove amount from current stake
+						stakerEntry.Amount -= unbondingEntry.Amount
+
+						// Remove amount from current unbondingAmount
+						stakerEntry.UnbondingAmount -= unbondingEntry.Amount
+
+						// Update Total stake in pool
+						pool.TotalStake = pool.TotalStake - unbondingEntry.Amount
+
+						// If staker still has stake -> update
+						u.K.SetStaker(u.Ctx, stakerEntry)
+					}
+
+					// Update current lowest staker
+					u.K.updateLowestStaker(u.Ctx, &pool)
+
+					u.K.SetPool(u.Ctx, pool)
+
+					// Transfer the money
+					error := u.K.transferToAddress(u.Ctx, unbondingEntry.Delegator, unbondingEntry.Amount)
+					if error != nil {
+						u.K.PanicHalt(u.Ctx, "Not enough money in module: "+error.Error())
+					}
+
+					types.EmitUnstakeEvent(u.Ctx, pool.Id, unbondingEntry.Staker, unbondingEntry.Amount)
 				}
-
-				pool, poolShouldExist := u.K.GetPool(u.Ctx, unbondingEntry.PoolId)
-				if !poolShouldExist {
-					panic("Pool should exist")
-				}
-
-				// Check if user got slashed during unbonding.
-				// If user does now have less stake than in the unbonding entry
-				// correct the UnbondingAmount to the stakers Amount
-				if stakerEntry.UnbondingAmount > stakerEntry.Amount {
-					unbondingEntry.Amount = stakerEntry.Amount
-				}
-
-				if stakerEntry.Amount == unbondingEntry.Amount {
-					u.K.removeStaker(u.Ctx, &pool, &stakerEntry)
-				} else {
-					// Remove amount from current stake
-					stakerEntry.Amount -= unbondingEntry.Amount
-
-					// Remove amount from current unbondingAmount
-					stakerEntry.UnbondingAmount -= unbondingEntry.Amount
-
-					// Update Total stake in pool
-					pool.TotalStake = pool.TotalStake - unbondingEntry.Amount
-
-					// If staker still has stake -> update
-					u.K.SetStaker(u.Ctx, stakerEntry)
-				}
-
-				// Update current lowest staker
-				u.K.updateLowestStaker(u.Ctx, &pool)
-
-				u.K.SetPool(u.Ctx, pool)
-
-				// Transfer the money
-				error := u.K.transferToAddress(u.Ctx, unbondingEntry.Delegator, unbondingEntry.Amount)
-				if error != nil {
-					panic("Not enough money in module: " + error.Error())
-				}
-
-				types.EmitUnstakeEvent(u.Ctx, pool.Id, unbondingEntry.Staker, unbondingEntry.Amount)
 
 			} else {
 				// Handle case if delegator delegated to another staker
@@ -144,7 +144,7 @@ func (u Unbond) CheckAndPerformUndelegation() (count uint64, error error) {
 				// Transfer the money
 				error := u.K.transferToAddress(u.Ctx, unbondingEntry.Delegator, unbondingEntry.Amount)
 				if error != nil {
-					panic("Not enough money in module: " + error.Error())
+					u.K.PanicHalt(u.Ctx, "Not enough money in module: "+error.Error())
 				}
 
 			}
@@ -162,5 +162,5 @@ func (u Unbond) CheckAndPerformUndelegation() (count uint64, error error) {
 		}
 	}
 
-	return 0, nil
+	return count, nil
 }

@@ -2,6 +2,7 @@ package keeper
 
 import (
 	"context"
+
 	"github.com/KYVENetwork/chain/x/registry/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkErrors "github.com/cosmos/cosmos-sdk/types/errors"
@@ -36,6 +37,14 @@ func (k Keeper) CanVote(goCtx context.Context, req *types.QueryCanVoteRequest) (
 		return &types.QueryCanVoteResponse{
 			Possible: false,
 			Reason:   "Voter is no staker",
+		}, nil
+	}
+
+	// Check if empty bundle
+	if pool.BundleProposal.BundleId == "" {
+		return &types.QueryCanVoteResponse{
+			Possible: false,
+			Reason:   "Can not vote on empty bundle",
 		}, nil
 	}
 

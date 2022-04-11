@@ -40,38 +40,23 @@ func (k Keeper) CanPropose(goCtx context.Context, req *types.QueryCanProposeRequ
 		}, nil
 	}
 
-	// Check quorum
-	if pool.BundleProposal.GetBundleId() != "" {
-		validVotes := len(pool.BundleProposal.GetVotersValid())
-		invalidVotes := len(pool.BundleProposal.GetVotersInvalid())
-
-		if validVotes == 0 && invalidVotes == 0 {
-			return &types.QueryCanProposeResponse{
-				Possible: false,
-				Reason:   "Quorum not reached yet",
-			}, nil
-		}
-
-		valid := validVotes*2 > (len(pool.GetStakers()) - 1)
-		invalid := invalidVotes*2 >= (len(pool.GetStakers()) - 1)
-
-		if !valid && !invalid {
-			return &types.QueryCanProposeResponse{
-				Possible: false,
-				Reason:   "Quorum not reached yet",
-			}, nil
-		}
+	// Check if upload interval has been surpassed
+	if uint64(ctx.BlockTime().Unix()) < (pool.BundleProposal.CreatedAt + pool.UploadInterval) {
+		return &types.QueryCanProposeResponse{
+			Possible: false,
+			Reason:   "Upload interval not surpassed",
+		}, nil
 	}
 
-	// check if designated uploader
-	if pool.BundleProposal.GetNextUploader() != req.Proposer {
+	// Check if designated uploader
+	if pool.BundleProposal.NextUploader != req.Proposer {
 		return &types.QueryCanProposeResponse{
 			Possible: false,
 			Reason:   "Not designated uploader",
 		}, nil
 	}
 
-	// check if pool has funds
+	// Check if pool has funds
 	if pool.TotalFunds == 0 {
 		return &types.QueryCanProposeResponse{
 			Possible: false,
@@ -79,12 +64,32 @@ func (k Keeper) CanPropose(goCtx context.Context, req *types.QueryCanProposeRequ
 		}, nil
 	}
 
-	// check if uploader is the only staker
+	// Check if enough nodes are online
 	if len(pool.Stakers) < 2 {
 		return &types.QueryCanProposeResponse{
 			Possible: false,
-			Reason:   "Uploader is the only node in pool",
+			Reason:   "Not enough nodes online",
 		}, nil
+	}
+
+	// Check if consensus has already been reached.
+	valid := false
+	invalid := false
+
+	if len(pool.Stakers) > 1 {
+		// subtract one because of uploader
+		valid = len(pool.BundleProposal.VotersValid)*2 > (len(pool.Stakers) - 1)
+		invalid = len(pool.BundleProposal.VotersInvalid)*2 >= (len(pool.Stakers) - 1)
+	}
+
+	// Check if next_uploader has to upload NO_QUORUM_BUNDLE
+	if pool.BundleProposal.BundleId != "" {
+		if !valid && !invalid {
+			return &types.QueryCanProposeResponse{
+				Possible: true,
+				Reason:   types.NO_QUORUM_BUNDLE,
+			}, nil
+		}
 	}
 
 	return &types.QueryCanProposeResponse{

@@ -50,7 +50,7 @@ genesis:
           logo: "9FJDam56yBbmvn8rlamEucATH5UcYqSBw468rlCXn8E",
           lowest_funder: "",
           lowest_staker: "",
-          min_bundle_size: "100",
+          upload_interval: "100",
           name: "Moonbeam",
           operating_cost: "100",
           paused: false,

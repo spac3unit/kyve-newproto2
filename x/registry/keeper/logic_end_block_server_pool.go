@@ -15,53 +15,70 @@ func (k Keeper) HandleUploadTimeout(goCtx context.Context) {
 
 	// Iterate over all pools.
 	for _, pool := range pools {
-		// Skip if the pool is still in the "genesis state".
-		if pool.BundleProposal.CreatedAt == 0 {
+		// Remove next uploader immediately if not enough nodes are online
+		if len(pool.Stakers) < 2 && pool.BundleProposal.NextUploader != "" {
+			pool.BundleProposal.NextUploader = ""
+			k.SetPool(ctx, pool)
 			continue
 		}
-		// Skip if the pool doesn't have any funds.
-		if pool.TotalFunds == 0 {
+
+		// Remove next uploader immediately if pool has no funds
+		if pool.TotalFunds == 0 && pool.BundleProposal.NextUploader != "" {
+			pool.BundleProposal.NextUploader = ""
+			k.SetPool(ctx, pool)
 			continue
 		}
-		// Skip if the pool is paused.
-		if pool.Paused {
+
+		// Remove next uploader immediately if pool is paused
+		if pool.Paused && pool.BundleProposal.NextUploader != "" {
+			pool.BundleProposal.NextUploader = ""
+			k.SetPool(ctx, pool)
 			continue
 		}
 
 		// Skip if we haven't reached the upload timeout.
-		// TODO: Since timestamp is safe to use in Tendermint, consider switching.
-		if (uint64(ctx.BlockHeight()) - pool.BundleProposal.CreatedAt) <= k.UploadTimeout(ctx) {
+		if uint64(ctx.BlockTime().Unix()) < (pool.BundleProposal.CreatedAt + pool.UploadInterval + k.UploadTimeout(ctx)) {
 			continue
 		}
 
 		// We now know that the pool is active and the upload timeout has been reached.
-		// Now we slash the current uploader and select a new one.
+		// Now we slash and remove the current next_uploader and select a new one.
 
-		// Fetch the votes on the current bundle and check if consensus has been reached.
-		validVotes := len(pool.BundleProposal.VotersValid)
-		invalidVotes := len(pool.BundleProposal.VotersInvalid)
+		staker, foundStaker := k.GetStaker(ctx, pool.BundleProposal.NextUploader, pool.Id)
 
-		valid := validVotes*2 > (len(pool.Stakers) - 1)
-		invalid := invalidVotes*2 >= (len(pool.Stakers) - 1)
+		// skip timeout slash if not enough nodes are online 
+		if foundStaker {
+			// slash next_uploader for not uploading in time
+			slashAmount := k.slashStaker(ctx, &pool, staker.Account, k.TimeoutSlash(ctx))
+	
+			// emit slashing event
+			types.EmitSlashEvent(ctx, pool.Id, staker.Account, slashAmount)
 
-		if valid || invalid {
-			// If consensus was reached, let's finalise the current bundle.
-			// TODO: What's the best way to handle this error? (since we're inside the EndBlock logic)
-			k.finalizeBundleProposal(
-				ctx, pool, pool.BundleProposal.NextUploader, types.EmptyBundle, 0, 0,
-			)
-		} else {
-			// If consensus wasn't reached, we drop the bundle and emit an event.
-			types.EmitBundleDroppedQuorumNotReachedEvent(ctx, &pool)
+			staker, foundStaker = k.GetStaker(ctx, pool.BundleProposal.NextUploader, pool.Id)
 
-			pool.BundleProposal = &types.BundleProposal{
-				NextUploader: pool.BundleProposal.NextUploader,
-				FromHeight:   pool.BundleProposal.FromHeight,
-				ToHeight:     pool.BundleProposal.FromHeight,
-				CreatedAt:    uint64(ctx.BlockHeight()),
+			// check if next uploader is still there or already removed
+			if foundStaker {
+				// Transfer remaining stake to account.
+				k.transferToAddress(ctx, staker.Account, staker.Amount)
+		
+				// remove current next_uploader
+				k.removeStaker(ctx, &pool, &staker)
 			}
-
-			k.SetPool(ctx, pool)
+	
+			// Update current lowest staker
+			k.updateLowestStaker(ctx, &pool)
 		}
+
+		nextUploader := ""
+
+		if len(pool.Stakers) > 0 {
+			nextUploader = k.getNextUploaderByRandom(ctx, &pool, false)
+		}
+
+		// update bundle proposal
+		pool.BundleProposal.NextUploader = nextUploader
+		pool.BundleProposal.CreatedAt = uint64(ctx.BlockTime().Unix())
+
+		k.SetPool(ctx, pool)
 	}
 }

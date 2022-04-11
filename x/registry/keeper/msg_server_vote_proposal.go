@@ -20,6 +20,7 @@ func (k msgServer) VoteProposal(
 	if !found {
 		return nil, sdkErrors.Wrapf(sdkErrors.ErrNotFound, types.ErrPoolNotFound.Error(), msg.Id)
 	}
+
 	// Error if the pool is paused.
 	if pool.Paused {
 		return nil, sdkErrors.Wrap(sdkErrors.ErrUnauthorized, types.ErrPoolPaused.Error())

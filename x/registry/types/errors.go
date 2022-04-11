@@ -28,7 +28,7 @@ var (
 	ErrNoStaker               = sdkerrors.Register(ModuleName, 1105, "sender is no staker")
 	ErrPoolPaused             = sdkerrors.Register(ModuleName, 1106, "pool is paused")
 	ErrInvalidArgs            = sdkerrors.Register(ModuleName, 1107, "invalid args")
-	ErrMinBundleSize          = sdkerrors.Register(ModuleName, 1108, "min bundle size not reached")
+	ErrUploadInterval          = sdkerrors.Register(ModuleName, 1108, "upload interval not surpassed")
 	ErrInvalidBundleId        = sdkerrors.Register(ModuleName, 1109, "current bundleId %v does not match provided bundleId")
 	ErrAlreadyVoted           = sdkerrors.Register(ModuleName, 1110, "already voted on proposal %v")
 	ErrQuorumNotReached       = sdkerrors.Register(ModuleName, 1111, "quorum not reached")

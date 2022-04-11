@@ -40,7 +40,15 @@ func InitGenesis(ctx sdk.Context, k keeper.Keeper, genState types.GenesisState) 
 	for _, elem := range genState.ProposalList {
 		k.SetProposal(ctx, elem)
 	}
-	// this line is used by starport scaffolding # genesis/module/init
+
+	// Set state of unbonding-queue
+	k.SetUnbondingState(ctx, genState.UnbondingState)
+
+	// Set all the unbondingEntries
+	for _, elem := range genState.UnbondingEntries {
+		k.SetUnbondingEntries(ctx, elem)
+	}
+
 	k.SetParams(ctx, genState.Params)
 }
 
@@ -57,7 +65,8 @@ func ExportGenesis(ctx sdk.Context, k keeper.Keeper) *types.GenesisState {
 	genesis.DelegationPoolDataList = k.GetAllDelegationPoolData(ctx)
 	genesis.DelegationEntriesList = k.GetAllDelegationEntries(ctx)
 	genesis.ProposalList = k.GetAllProposal(ctx)
-	// this line is used by starport scaffolding # genesis/module/export
+	genesis.UnbondingState, _ = k.GetUnbondingState(ctx)
+	genesis.UnbondingEntries = k.GetAllUnbondingEntries(ctx)
 
 	return genesis
 }
