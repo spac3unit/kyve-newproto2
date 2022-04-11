@@ -72,7 +72,7 @@ func CmdSubmitCreatePoolProposal() *cobra.Command {
 				return err
 			}
 
-			minBundleSize, err := strconv.ParseUint(args[6], 10, 64)
+			uploadInterval, err := strconv.ParseUint(args[6], 10, 64)
 			if err != nil {
 				return err
 			}
@@ -103,7 +103,7 @@ func CmdSubmitCreatePoolProposal() *cobra.Command {
 				return err
 			}
 
-			content := types.NewCreatePoolProposal(title, description, args[0], args[1], args[2], args[3], args[4], startHeight, minBundleSize, operatingCost)
+			content := types.NewCreatePoolProposal(title, description, args[0], args[1], args[2], args[3], args[4], startHeight, uploadInterval, operatingCost)
 
 			msg, err := govtypes.NewMsgSubmitProposal(content, deposit, from)
 			if err != nil {
@@ -143,7 +143,7 @@ func CmdSubmitUpdatePoolProposal() *cobra.Command {
 				return err
 			}
 
-			minBundleSize, err := strconv.ParseUint(args[6], 10, 64)
+			uploadInterval, err := strconv.ParseUint(args[6], 10, 64)
 			if err != nil {
 				return err
 			}
@@ -174,7 +174,7 @@ func CmdSubmitUpdatePoolProposal() *cobra.Command {
 				return err
 			}
 
-			content := types.NewUpdatePoolProposal(title, description, id, args[1], args[2], args[3], args[4], args[5], minBundleSize, operatingCost)
+			content := types.NewUpdatePoolProposal(title, description, id, args[1], args[2], args[3], args[4], args[5], uploadInterval, operatingCost)
 
 			msg, err := govtypes.NewMsgSubmitProposal(content, deposit, from)
 			if err != nil {

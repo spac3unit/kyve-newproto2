@@ -2,6 +2,7 @@ package types
 
 import (
 	"fmt"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	paramtypes "github.com/cosmos/cosmos-sdk/x/params/types"
@@ -12,27 +13,27 @@ var _ paramtypes.ParamSet = (*Params)(nil)
 
 var (
 	KeyVoteSlash            = []byte("VoteSlash")
-	DefaultVoteSlash string = "0.2"
+	DefaultVoteSlash string = "0.1"
 )
 
 var (
 	KeyUploadSlash            = []byte("UploadSlash")
-	DefaultUploadSlash string = "0.5"
+	DefaultUploadSlash string = "0.2"
 )
 
 var (
 	KeyTimeoutSlash            = []byte("TimeoutSlash")
-	DefaultTimeoutSlash string = "0.01"
+	DefaultTimeoutSlash string = "0.02"
 )
 
 var (
 	KeyUploadTimeout            = []byte("UploadTimeout")
-	DefaultUploadTimeout uint64 = 200
+	DefaultUploadTimeout uint64 = 600
 )
 
 var (
 	KeyStorageCost            = []byte("StorageCost")
-	DefaultStorageCost uint64 = 17472924
+	DefaultStorageCost uint64 = 100000
 )
 
 var (

@@ -21,6 +21,7 @@ type (
 		accountKeeper types.AccountKeeper
 		bankKeeper    types.BankKeeper
 		distrKeeper   types.DistrKeeper
+		upgradeKeeper types.UpgradeKeeper
 	}
 )
 
@@ -33,6 +34,7 @@ func NewKeeper(
 	accountKeeper types.AccountKeeper,
 	bankKeeper types.BankKeeper,
 	distrKeeper types.DistrKeeper,
+	upgradeKeeper types.UpgradeKeeper,
 ) *Keeper {
 	// set KeyTable if it has not already been set
 	if !ps.HasKeyTable() {
@@ -48,6 +50,7 @@ func NewKeeper(
 		accountKeeper: accountKeeper,
 		bankKeeper:    bankKeeper,
 		distrKeeper:   distrKeeper,
+		upgradeKeeper: upgradeKeeper,
 	}
 }
 

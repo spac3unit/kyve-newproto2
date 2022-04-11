@@ -1,6 +1,7 @@
 package app
 
 import (
+	v0_1_0 "github.com/KYVENetwork/chain/app/upgrades/v0.1.0"
 	"io"
 	"net/http"
 	"os"
@@ -289,8 +290,8 @@ func New(
 		app.AccountKeeper,
 		app.BankKeeper,
 		app.DistrKeeper,
+		app.UpgradeKeeper,
 	)
-	registryModule := registrymodule.NewAppModule(appCodec, app.RegistryKeeper, app.AccountKeeper, app.BankKeeper)
 
 	// register the proposal types
 	govRouter := govtypes.NewRouter()
@@ -305,6 +306,8 @@ func New(
 		appCodec, keys[govtypes.StoreKey], app.GetSubspace(govtypes.ModuleName), app.AccountKeeper, app.BankKeeper,
 		&stakingKeeper, govRouter,
 	)
+
+	registryModule := registrymodule.NewAppModule(appCodec, app.RegistryKeeper, app.AccountKeeper, app.BankKeeper, app.UpgradeKeeper)
 
 	// this line is used by starport scaffolding # stargate/app/keeperDefinition
 
@@ -395,6 +398,7 @@ func New(
 	// initialize BaseApp
 	app.SetInitChainer(app.InitChainer)
 	app.SetBeginBlocker(app.BeginBlocker)
+	app.setupUpgradeHandlers()
 
 	anteHandler, err := ante.NewAnteHandler(
 		ante.HandlerOptions{
@@ -545,4 +549,8 @@ func GetMaccPerms() map[string][]string {
 		dupMaccPerms[k] = v
 	}
 	return dupMaccPerms
+}
+
+func (app *App) setupUpgradeHandlers() {
+	app.UpgradeKeeper.SetUpgradeHandler(v0_1_0.UpgradeName, v0_1_0.CreateUpgradeHandler())
 }

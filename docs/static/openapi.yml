@@ -12709,10 +12709,10 @@ paths:
                           type: string
                           format: uint64
                           description: start_height ...
-                        minBundleSize:
+                        uploadInterval:
                           type: string
                           format: uint64
-                          description: min_bundle_size ...
+                          description: upload_interval ...
                         operatingCost:
                           type: string
                           format: uint64
@@ -13004,10 +13004,10 @@ paths:
                           type: string
                           format: uint64
                           description: start_height ...
-                        minBundleSize:
+                        uploadInterval:
                           type: string
                           format: uint64
-                          description: min_bundle_size ...
+                          description: upload_interval ...
                         operatingCost:
                           type: string
                           format: uint64
@@ -13266,10 +13266,10 @@ paths:
                           type: string
                           format: uint64
                           description: start_height ...
-                        minBundleSize:
+                        uploadInterval:
                           type: string
                           format: uint64
-                          description: min_bundle_size ...
+                          description: upload_interval ...
                         operatingCost:
                           type: string
                           format: uint64
@@ -13845,10 +13845,10 @@ paths:
                     type: string
                     format: uint64
                     description: start_height ...
-                  minBundleSize:
+                  uploadInterval:
                     type: string
                     format: uint64
-                    description: min_bundle_size ...
+                    description: upload_interval ...
                   operatingCost:
                     type: string
                     format: uint64
@@ -14282,10 +14282,10 @@ paths:
                     type: string
                     format: uint64
                     description: start_height ...
-                  minBundleSize:
+                  uploadInterval:
                     type: string
                     format: uint64
-                    description: min_bundle_size ...
+                    description: upload_interval ...
                   operatingCost:
                     type: string
                     format: uint64
@@ -14447,10 +14447,10 @@ paths:
                       type: string
                       format: uint64
                       description: start_height ...
-                    minBundleSize:
+                    uploadInterval:
                       type: string
                       format: uint64
-                      description: min_bundle_size ...
+                      description: upload_interval ...
                     operatingCost:
                       type: string
                       format: uint64
@@ -14920,6 +14920,65 @@ paths:
           type: boolean
       tags:
         - Query
+  '/kyve/registry/v1beta1/stake_info/{poolId}/{staker}':
+    get:
+      summary: >-
+        StakeInfo returns necessary information to become a staker (used by the
+        protocol nodes)
+      operationId: KyveRegistryV1Beta1StakeInfo
+      responses:
+        '200':
+          description: A successful response.
+          schema:
+            type: object
+            properties:
+              balance:
+                type: string
+                description: balance ...
+              currentStake:
+                type: string
+                description: current_stake ...
+              minimumStake:
+                type: string
+                description: minimum_stake ...
+              currentUnbonding:
+                type: string
+                description: current_unbonding ...
+            description: >-
+              QueryStakeInfoResponse is the response type for the
+              Query/StakeInfo RPC method.
+        default:
+          description: An unexpected error response.
+          schema:
+            type: object
+            properties:
+              code:
+                type: integer
+                format: int32
+              message:
+                type: string
+              details:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    '@type':
+                      type: string
+                  additionalProperties: {}
+      parameters:
+        - name: poolId
+          description: pool_id ...
+          in: path
+          required: true
+          type: string
+          format: uint64
+        - name: staker
+          description: staker ..
+          in: path
+          required: true
+          type: string
+      tags:
+        - Query
   '/kyve/registry/v1beta1/stakers_by_pool_and_delegator/{poolId}/{delegator}':
     get:
       summary: StakersByPoolAndDelegator ...
@@ -14978,10 +15037,10 @@ paths:
                     type: string
                     format: uint64
                     description: start_height ...
-                  minBundleSize:
+                  uploadInterval:
                     type: string
                     format: uint64
-                    description: min_bundle_size ...
+                    description: upload_interval ...
                   operatingCost:
                     type: string
                     format: uint64
@@ -22838,10 +22897,10 @@ definitions:
             type: string
             format: uint64
             description: start_height ...
-          minBundleSize:
+          uploadInterval:
             type: string
             format: uint64
-            description: min_bundle_size ...
+            description: upload_interval ...
           operatingCost:
             type: string
             format: uint64
@@ -23017,10 +23076,10 @@ definitions:
             type: string
             format: uint64
             description: start_height ...
-          minBundleSize:
+          uploadInterval:
             type: string
             format: uint64
-            description: min_bundle_size ...
+            description: upload_interval ...
           operatingCost:
             type: string
             format: uint64
@@ -23217,10 +23276,10 @@ definitions:
         type: string
         format: uint64
         description: start_height ...
-      minBundleSize:
+      uploadInterval:
         type: string
         format: uint64
-        description: min_bundle_size ...
+        description: upload_interval ...
       operatingCost:
         type: string
         format: uint64
@@ -23417,10 +23476,10 @@ definitions:
                   type: string
                   format: uint64
                   description: start_height ...
-                minBundleSize:
+                uploadInterval:
                   type: string
                   format: uint64
-                  description: min_bundle_size ...
+                  description: upload_interval ...
                 operatingCost:
                   type: string
                   format: uint64
@@ -23623,10 +23682,10 @@ definitions:
                   type: string
                   format: uint64
                   description: start_height ...
-                minBundleSize:
+                uploadInterval:
                   type: string
                   format: uint64
-                  description: min_bundle_size ...
+                  description: upload_interval ...
                 operatingCost:
                   type: string
                   format: uint64
@@ -23796,10 +23855,10 @@ definitions:
                   type: string
                   format: uint64
                   description: start_height ...
-                minBundleSize:
+                uploadInterval:
                   type: string
                   format: uint64
-                  description: min_bundle_size ...
+                  description: upload_interval ...
                 operatingCost:
                   type: string
                   format: uint64
@@ -23967,10 +24026,10 @@ definitions:
             type: string
             format: uint64
             description: start_height ...
-          minBundleSize:
+          uploadInterval:
             type: string
             format: uint64
-            description: min_bundle_size ...
+            description: upload_interval ...
           operatingCost:
             type: string
             format: uint64
@@ -24310,10 +24369,10 @@ definitions:
             type: string
             format: uint64
             description: start_height ...
-          minBundleSize:
+          uploadInterval:
             type: string
             format: uint64
-            description: min_bundle_size ...
+            description: upload_interval ...
           operatingCost:
             type: string
             format: uint64
@@ -24439,10 +24498,10 @@ definitions:
               type: string
               format: uint64
               description: start_height ...
-            minBundleSize:
+            uploadInterval:
               type: string
               format: uint64
-              description: min_bundle_size ...
+              description: upload_interval ...
             operatingCost:
               type: string
               format: uint64
@@ -24655,6 +24714,24 @@ definitions:
     description: >-
       QueryProposalsResponse is the response type for the Query/Proposals RPC
       method.
+  kyve.registry.v1beta1.QueryStakeInfoResponse:
+    type: object
+    properties:
+      balance:
+        type: string
+        description: balance ...
+      currentStake:
+        type: string
+        description: current_stake ...
+      minimumStake:
+        type: string
+        description: minimum_stake ...
+      currentUnbonding:
+        type: string
+        description: current_unbonding ...
+    description: >-
+      QueryStakeInfoResponse is the response type for the Query/StakeInfo RPC
+      method.
   kyve.registry.v1beta1.QueryStakersByPoolAndDelegatorResponse:
     type: object
     properties:
@@ -24706,10 +24783,10 @@ definitions:
             type: string
             format: uint64
             description: start_height ...
-          minBundleSize:
+          uploadInterval:
             type: string
             format: uint64
-            description: min_bundle_size ...
+            description: upload_interval ...
           operatingCost:
             type: string
             format: uint64
@@ -24956,10 +25033,10 @@ definitions:
             type: string
             format: uint64
             description: start_height ...
-          minBundleSize:
+          uploadInterval:
             type: string
             format: uint64
-            description: min_bundle_size ...
+            description: upload_interval ...
           operatingCost:
             type: string
             format: uint64

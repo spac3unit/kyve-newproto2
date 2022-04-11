@@ -171,12 +171,16 @@ func getDelegationWeight(delegation uint64) uint64 {
 }
 
 // getNextUploaderByRandom is an internal function that randomly selects the next uploader for a given pool.
-func (k Keeper) getNextUploaderByRandom(ctx sdk.Context, pool *types.Pool) (nextUploader string) {
+func (k Keeper) getNextUploaderByRandom(ctx sdk.Context, pool *types.Pool, excludeNextUploader bool) (nextUploader string) {
 	var candidates []RandomChoiceCandidate
 
 	for _, s := range pool.Stakers {
 		staker, foundStaker := k.GetStaker(ctx, s, pool.Id)
 		delegation, foundDelegation := k.GetDelegationPoolData(ctx, pool.Id, s)
+
+		if excludeNextUploader && staker.Account == pool.BundleProposal.NextUploader {
+			continue
+		}
 
 		if foundStaker {
 			if foundDelegation {
@@ -210,7 +214,7 @@ func (k Keeper) slashStaker(
 		// Parse the provided slash percentage and panic on any errors.
 		slashAmountRatio, err := sdk.NewDecFromStr(slashAmountRatioDecimalString)
 		if err != nil {
-			panic("Invalid value for params: " + slashAmountRatioDecimalString + " error: " + err.Error())
+			k.PanicHalt(ctx, "Invalid value for params: "+slashAmountRatioDecimalString+" error: "+err.Error())
 		}
 
 		// Compute how much we're going to slash the staker.
@@ -230,279 +234,9 @@ func (k Keeper) slashStaker(
 		// Transfer the slashed amount to the treasury.
 		err = k.transferToTreasury(ctx, slash)
 		if err != nil {
-			panic(err)
+			k.PanicHalt(ctx, err.Error())
 		}
 	}
 
 	return slash
-}
-
-// finalizeBundleProposal is an internal function that finalises the current bundle proposal.
-func (k Keeper) finalizeBundleProposal(
-	ctx sdk.Context, pool types.Pool, msgUploader string, msgBundleId string, msgByteSize uint64, msgBundleSize uint64,
-) (*types.MsgSubmitBundleProposalResponse, error) {
-	// Randomly select the next uploader (weighted random).
-	nextUploader := k.getNextUploaderByRandom(ctx, &pool)
-
-	// If the pool is in "genesis state" or an upload timeout has occurred, just update and return.
-	if pool.BundleProposal.BundleId == "" {
-		pool.BundleProposal = &types.BundleProposal{
-			Uploader:     msgUploader,
-			NextUploader: nextUploader,
-			BundleId:     msgBundleId,
-			ByteSize:     msgByteSize,
-			FromHeight:   pool.BundleProposal.ToHeight,
-			ToHeight:     pool.BundleProposal.ToHeight + msgBundleSize,
-			CreatedAt:    uint64(ctx.BlockHeight()),
-		}
-
-		k.SetPool(ctx, pool)
-
-		return &types.MsgSubmitBundleProposalResponse{}, nil
-	}
-
-	// We have a currently active bundle, we now need to evaluate the round ...
-
-	// Check if consensus has already been reached.
-	validVotes := len(pool.BundleProposal.VotersValid)
-	invalidVotes := len(pool.BundleProposal.VotersInvalid)
-
-	valid := validVotes*2 > (len(pool.Stakers) - 1)
-	invalid := invalidVotes*2 >= (len(pool.Stakers) - 1)
-
-	if !valid && !invalid {
-		// Not enough votes yet
-		return nil, types.ErrQuorumNotReached
-	}
-
-	// Handle an empty bundle ...
-	if pool.BundleProposal.BundleId == types.EmptyBundle {
-		if valid {
-			// Emit an empty bundle event.
-			types.EmitEmptyBundleEvent(ctx, &pool)
-		}
-
-		if invalid {
-			// Partially slash the uploader, because they were offline.
-			slashAmount := k.slashStaker(ctx, &pool, pool.BundleProposal.Uploader, k.TimeoutSlash(ctx))
-
-			// Emit a slash event for the uploader (TimeoutSlash).
-			types.EmitSlashEvent(ctx, pool.Id, pool.BundleProposal.Uploader, slashAmount)
-
-			// Update the current lowest staker.
-			k.updateLowestStaker(ctx, &pool)
-
-			// Emit a bundle timeout event.
-			types.EmitBundleTimeoutEvent(ctx, &pool)
-		}
-
-		pool.BundleProposal = &types.BundleProposal{
-			Uploader:     msgUploader,
-			NextUploader: nextUploader,
-			BundleId:     msgBundleId,
-			ByteSize:     msgByteSize,
-			FromHeight:   pool.BundleProposal.ToHeight,
-			ToHeight:     pool.BundleProposal.ToHeight + msgBundleSize,
-			CreatedAt:    uint64(ctx.BlockHeight()),
-		}
-
-		k.SetPool(ctx, pool)
-
-		return &types.MsgSubmitBundleProposalResponse{}, nil
-	}
-
-	// Handle a valid bundle ...
-	if valid {
-		// Calculate the total reward for the bundle, and individual payouts.
-		bundleReward := pool.OperatingCost + (pool.BundleProposal.ByteSize * k.StorageCost(ctx))
-
-		networkFee, err := sdk.NewDecFromStr(k.NetworkFee(ctx))
-		if err != nil {
-			panic("Invalid value for params: " + err.Error())
-		}
-
-		treasuryPayout := uint64(sdk.NewDec(int64(bundleReward)).Mul(networkFee).RoundInt64())
-		uploaderPayout := bundleReward - treasuryPayout
-
-		// Calculate the delegation rewards for the uploader.
-		uploader, foundUploader := k.GetStaker(ctx, pool.BundleProposal.Uploader, pool.Id)
-		uploaderDelegation, foundUploaderDelegation := k.GetDelegationPoolData(ctx, pool.Id, pool.BundleProposal.Uploader)
-
-		if foundUploader && foundUploaderDelegation {
-			// If the uploader has no delegators, it keeps the delegation reward.
-
-			if uploaderDelegation.DelegatorCount > 0 {
-				// Calculate the reward, factoring in the node commission, and subtract from the uploader payout.
-				commission, _ := sdk.NewDecFromStr(uploader.Commission)
-				delegationReward := uint64(
-					sdk.NewDec(int64(uploaderPayout)).Mul(sdk.NewDec(1).Sub(commission)).RoundInt64(),
-				)
-
-				uploaderPayout -= delegationReward
-				uploaderDelegation.CurrentRewards += delegationReward
-
-				k.SetDelegationPoolData(ctx, uploaderDelegation)
-			}
-		}
-
-		// Calculate the individual cost for each pool funder.
-		// NOTE: Because of integer division, it is possible that there is a small remainder.
-		//       This remainder is in worst case MaxFundersAmount(tkyve) and is charged to the lowest funder.
-		fundersCost := bundleReward / uint64(len(pool.Funders))
-		fundersCostRemainder := bundleReward - uint64(len(pool.Funders))*fundersCost
-
-		// Fetch the lowest funder, and find a new one if the current one isn't found.
-		lowestFunder, foundLowestFunder := k.GetFunder(ctx, pool.LowestFunder, pool.Id)
-
-		if !foundLowestFunder {
-			k.updateLowestFunder(ctx, &pool)
-			lowestFunder, _ = k.GetFunder(ctx, pool.LowestFunder, pool.Id)
-		}
-
-		// Remove every funder who can't afford the funder cost.
-		if fundersCost+fundersCostRemainder > lowestFunder.Amount {
-			// First, let's remove the lowest funder.
-			k.removeFunder(ctx, &pool, &lowestFunder)
-
-			err := k.transferToTreasury(ctx, lowestFunder.Amount)
-			if err != nil {
-				return nil, err
-			}
-
-			// Now, let's remove all other funders who have run out of funds.
-			for _, account := range pool.Funders {
-				funder, _ := k.GetFunder(ctx, account, pool.Id)
-
-				if funder.Amount < fundersCost {
-					k.removeFunder(ctx, &pool, &funder)
-
-					err := k.transferToTreasury(ctx, funder.Amount)
-					if err != nil {
-						return nil, err
-					}
-				}
-			}
-
-			// Recalculate the lowest funder, update, and return.
-			k.updateLowestFunder(ctx, &pool)
-
-			pool.BundleProposal = &types.BundleProposal{
-				Uploader:      pool.BundleProposal.Uploader,
-				NextUploader:  pool.BundleProposal.NextUploader,
-				BundleId:      pool.BundleProposal.BundleId,
-				ByteSize:      pool.BundleProposal.ByteSize,
-				FromHeight:    pool.BundleProposal.FromHeight,
-				ToHeight:      pool.BundleProposal.ToHeight,
-				CreatedAt:     uint64(ctx.BlockHeight()),
-				VotersValid:   pool.BundleProposal.VotersValid,
-				VotersInvalid: pool.BundleProposal.VotersInvalid,
-			}
-
-			k.SetPool(ctx, pool)
-
-			// Emit a bundle dropped event because of insufficient funds.
-			types.EmitBundleDroppedInsufficientFundsEvent(ctx, &pool)
-
-			return &types.MsgSubmitBundleProposalResponse{}, nil
-		}
-
-		// Charge every funder equally.
-		for _, account := range pool.Funders {
-			funder, _ := k.GetFunder(ctx, account, pool.Id)
-			funder.Amount -= fundersCost
-			k.SetFunder(ctx, funder)
-		}
-
-		// Remove any remainder cost from the lowest funder.
-		lowestFunder, _ = k.GetFunder(ctx, pool.LowestFunder, pool.Id)
-		lowestFunder.Amount -= fundersCostRemainder
-		k.SetFunder(ctx, lowestFunder)
-
-		// Subtract bundle reward from the pool's total funds.
-		pool.TotalFunds -= bundleReward
-
-		// Partially slash all nodes who voted incorrectly.
-		for _, voter := range pool.BundleProposal.GetVotersInvalid() {
-			slashAmount := k.slashStaker(ctx, &pool, voter, k.VoteSlash(ctx))
-			types.EmitSlashEvent(ctx, pool.Id, voter, slashAmount)
-		}
-
-		// Send payout to treasury.
-		errTreasury := k.transferToTreasury(ctx, treasuryPayout)
-		if errTreasury != nil {
-			return nil, errTreasury
-		}
-
-		// Send payout to uploader.
-		errTransfer := k.transferToAddress(ctx, pool.BundleProposal.Uploader, uploaderPayout)
-		if errTransfer != nil {
-			return nil, errTransfer
-		}
-
-		// Finalise the proposal, saving useful information.
-		pool.HeightArchived = pool.BundleProposal.ToHeight
-		pool.BytesArchived = pool.BytesArchived + pool.BundleProposal.ByteSize
-		pool.TotalBundleRewards = pool.TotalBundleRewards + bundleReward
-		pool.TotalBundles = pool.TotalBundles + 1
-
-		k.SetProposal(ctx, types.Proposal{
-			BundleId:    pool.BundleProposal.BundleId,
-			PoolId:      pool.Id,
-			Uploader:    pool.BundleProposal.Uploader,
-			FromHeight:  pool.BundleProposal.FromHeight,
-			ToHeight:    pool.BundleProposal.ToHeight,
-			FinalizedAt: uint64(ctx.BlockHeight()),
-		})
-
-		// Emit a valid bundle event.
-		types.EmitBundleValidEvent(ctx, &pool, bundleReward)
-
-		// Update and return.
-		pool.BundleProposal = &types.BundleProposal{
-			Uploader:     msgUploader,
-			NextUploader: nextUploader,
-			BundleId:     msgBundleId,
-			ByteSize:     msgByteSize,
-			FromHeight:   pool.BundleProposal.ToHeight,
-			ToHeight:     pool.BundleProposal.ToHeight + msgBundleSize,
-			CreatedAt:    uint64(ctx.BlockHeight()),
-		}
-
-		k.SetPool(ctx, pool)
-
-		return &types.MsgSubmitBundleProposalResponse{}, nil
-	}
-
-	// Handle an invalid bundle ...
-	if invalid {
-		// Partially slash all nodes who voted incorrectly.
-		for _, voter := range pool.BundleProposal.GetVotersValid() {
-			slashAmount := k.slashStaker(ctx, &pool, voter, k.VoteSlash(ctx))
-			types.EmitSlashEvent(ctx, pool.Id, voter, slashAmount)
-		}
-
-		// Partially slash the uploader.
-		slashAmount := k.slashStaker(ctx, &pool, pool.BundleProposal.Uploader, k.UploadSlash(ctx))
-		types.EmitSlashEvent(ctx, pool.Id, pool.BundleProposal.Uploader, slashAmount)
-
-		// Update the current lowest staker.
-		k.updateLowestStaker(ctx, &pool)
-
-		// Emit an invalid bundle event.
-		types.EmitBundleInvalidEvent(ctx, &pool)
-
-		// Update and return.
-		pool.BundleProposal = &types.BundleProposal{
-			NextUploader: pool.BundleProposal.NextUploader,
-			FromHeight:   pool.BundleProposal.FromHeight,
-			ToHeight:     pool.BundleProposal.FromHeight,
-			CreatedAt:    uint64(ctx.BlockHeight()),
-		}
-
-		k.SetPool(ctx, pool)
-
-		return &types.MsgSubmitBundleProposalResponse{}, nil
-	}
-
-	return &types.MsgSubmitBundleProposalResponse{}, nil
 }

@@ -36,7 +36,7 @@ func handleCreatePoolProposal(ctx sdk.Context, k keeper.Keeper, p *types.CreateP
 		Config:         p.Config,
 		HeightArchived: p.StartHeight,
 		StartHeight:    p.StartHeight,
-		MinBundleSize:  p.MinBundleSize,
+		UploadInterval:  p.UploadInterval,
 		OperatingCost:  p.OperatingCost,
 		BundleProposal: &types.BundleProposal{
 			FromHeight: p.StartHeight,
@@ -60,7 +60,7 @@ func handleUpdatePoolProposal(ctx sdk.Context, k keeper.Keeper, p *types.UpdateP
 	pool.Logo = p.Logo
 	pool.Versions = p.Versions
 	pool.Config = p.Config
-	pool.MinBundleSize = p.MinBundleSize
+	pool.UploadInterval = p.UploadInterval
 	pool.OperatingCost = p.OperatingCost
 
 	k.SetPool(ctx, pool)

@@ -80,6 +80,11 @@ service Query {
     option (google.api.http).get = "/kyve/registry/v1beta1/can_vote/{pool_id}/{voter}/{bundle_id}";
   }
 
+  // StakeInfo returns necessary information to become a staker (used by the protocol nodes)
+  rpc StakeInfo(QueryStakeInfoRequest) returns (QueryStakeInfoResponse) {
+    option (google.api.http).get = "/kyve/registry/v1beta1/stake_info/{pool_id}/{staker}";
+  }
+
   // STATS FOR USER ACCOUNT
 
   // AccountAssets ...
@@ -324,6 +329,26 @@ message QueryCanVoteResponse {
   bool possible = 1;
   // reason ...
   string reason = 2;
+}
+
+// QueryStakeInfoRequest is the request type for the Query/StakeInfo RPC method.
+message QueryStakeInfoRequest {
+  // pool_id ...
+  uint64 pool_id = 1;
+  // staker ..
+  string staker = 2;
+}
+
+// QueryStakeInfoResponse is the response type for the Query/StakeInfo RPC method.
+message QueryStakeInfoResponse {
+  // balance ...
+  string balance = 1;
+  // current_stake ...
+  string current_stake = 2;
+  // minimum_stake ...
+  string minimum_stake = 3;
+  // current_unbonding ...
+  string current_unbonding = 4;
 }
 
 // STATS FOR USER ACCOUNT

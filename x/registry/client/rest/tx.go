@@ -23,7 +23,7 @@ type CreatePoolRequest struct {
 	Versions      string       `json:"versions" yaml:"versions"`
 	Config        string       `json:"config" yaml:"config"`
 	StartHeight   uint64       `json:"startHeight" yaml:"startHeight"`
-	MinBundleSize uint64       `json:"minBundleSize" yaml:"minBundleSize"`
+	UploadInterval uint64       `json:"uploadInterval" yaml:"uploadInterval"`
 	OperatingCost uint64       `json:"operatingCost" yaml:"operatingCost"`
 }
 
@@ -52,7 +52,7 @@ func newCreatePoolHandler(clientCtx client.Context) http.HandlerFunc {
 			return
 		}
 
-		content := types.NewCreatePoolProposal(req.Title, req.Description, req.Name, req.Runtime, req.Logo, req.Versions, req.Config, req.StartHeight, req.MinBundleSize, req.OperatingCost)
+		content := types.NewCreatePoolProposal(req.Title, req.Description, req.Name, req.Runtime, req.Logo, req.Versions, req.Config, req.StartHeight, req.UploadInterval, req.OperatingCost)
 		msg, err := govtypes.NewMsgSubmitProposal(content, req.Deposit, fromAddr)
 		if rest.CheckBadRequestError(w, err) {
 			return
@@ -76,7 +76,7 @@ type UpdatePoolRequest struct {
 	Logo          string       `json:"logo" yaml:"logo"`
 	Versions      string       `json:"versions" yaml:"versions"`
 	Config        string       `json:"config" yaml:"config"`
-	MinBundleSize uint64       `json:"minBundleSize" yaml:"minBundleSize"`
+	UploadInterval uint64       `json:"uploadInterval" yaml:"uploadInterval"`
 	OperatingCost uint64       `json:"operatingCost" yaml:"operatingCost"`
 }
 
@@ -105,7 +105,7 @@ func newUpdatePoolHandler(clientCtx client.Context) http.HandlerFunc {
 			return
 		}
 
-		content := types.NewUpdatePoolProposal(req.Title, req.Description, req.Id, req.Name, req.Runtime, req.Logo, req.Versions, req.Config, req.MinBundleSize, req.OperatingCost)
+		content := types.NewUpdatePoolProposal(req.Title, req.Description, req.Id, req.Name, req.Runtime, req.Logo, req.Versions, req.Config, req.UploadInterval, req.OperatingCost)
 		msg, err := govtypes.NewMsgSubmitProposal(content, req.Deposit, fromAddr)
 		if rest.CheckBadRequestError(w, err) {
 			return

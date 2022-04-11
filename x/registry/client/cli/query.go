@@ -24,29 +24,29 @@ func GetQueryCmd(queryRoute string) *cobra.Command {
 		RunE:                       client.ValidateCmd,
 	}
 
-	cmd.AddCommand(CmdListPool())
+	// POOL
 	cmd.AddCommand(CmdShowPool())
-	cmd.AddCommand(CmdCanPropose())
-	cmd.AddCommand(CmdCanVote())
+	cmd.AddCommand(CmdListPool())
 	cmd.AddCommand(CmdFundingAmount())
 	cmd.AddCommand(CmdStakingAmount())
-
 	cmd.AddCommand(CmdFundersList())
-
 	cmd.AddCommand(CmdStakersList())
 
-	cmd.AddCommand(CmdAccountFundedList())
-
-	cmd.AddCommand(CmdAccountStakedList())
-
-	cmd.AddCommand(CmdShowDelegator())
-
-	cmd.AddCommand(CmdListProposal())
+	// WARP
 	cmd.AddCommand(CmdShowProposal())
+	cmd.AddCommand(CmdListProposal())
 	cmd.AddCommand(CmdProposalByHeight())
 
-	cmd.AddCommand(CmdAccountStakersDelegationList())
+	// PROTOCOL NODE - FLOW
+	cmd.AddCommand(CmdCanPropose())
+	cmd.AddCommand(CmdCanVote())
+	cmd.AddCommand(CmdStakeInfo())
 
+	// STATS FOR USER ACCOUNT
+	cmd.AddCommand(CmdAccountFundedList())
+	cmd.AddCommand(CmdAccountStakedList())
+	cmd.AddCommand(CmdShowDelegator())
+	cmd.AddCommand(CmdAccountStakersDelegationList())
 	cmd.AddCommand(CmdStakersByPoolAndDelegator())
 
 	// this line is used by starport scaffolding # 1
