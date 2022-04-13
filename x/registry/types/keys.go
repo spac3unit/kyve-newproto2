@@ -8,16 +8,16 @@ const (
 	// ModuleName defines the module name
 	ModuleName = "registry"
 
-	// StoreKey defines the primary module store key
+	// StoreKey defines the primary module store Key
 	StoreKey = ModuleName
 
 	// RouterKey is the message route for slashing
 	RouterKey = ModuleName
 
-	// QuerierRoute defines the module's query routing key
+	// QuerierRoute defines the module's query routing Key
 	QuerierRoute = ModuleName
 
-	// MemStoreKey defines the in-memory store key
+	// MemStoreKey defines the in-memory store Key
 	MemStoreKey = "mem_registry"
 )
 
@@ -99,61 +99,61 @@ const (
 	UnbondingEntriesKeyPrefixByDelegator = "UnbondingEntriesByDelegator/value/"
 )
 
-// DelegationEntriesKey returns the store key to retrieve a DelegationEntries from the index fields
+// DelegationEntriesKey returns the store Key to retrieve a DelegationEntries from the index fields
 func DelegationEntriesKey(poolId uint64, stakerAddress string, kIndex uint64) []byte {
-	return keyPrefix{}.aInt(poolId).aString(stakerAddress).aInt(kIndex).key
+	return KeyPrefixBuilder{}.AInt(poolId).AString(stakerAddress).AInt(kIndex).Key
 }
 
-// DelegationPoolDataKey returns the store key to retrieve a DelegationPoolData from the index fields
+// DelegationPoolDataKey returns the store Key to retrieve a DelegationPoolData from the index fields
 func DelegationPoolDataKey(poolId uint64, stakerAddress string) []byte {
-	return keyPrefix{}.aInt(poolId).aString(stakerAddress).key
+	return KeyPrefixBuilder{}.AInt(poolId).AString(stakerAddress).Key
 }
 
-// DelegatorKey returns the store key to retrieve a Delegator from the index fields
+// DelegatorKey returns the store Key to retrieve a Delegator from the index fields
 func DelegatorKey(poolId uint64, stakerAddress string, delegatorAddress string) []byte {
-	return keyPrefix{}.aInt(poolId).aString(stakerAddress).aString(delegatorAddress).key
+	return KeyPrefixBuilder{}.AInt(poolId).AString(stakerAddress).AString(delegatorAddress).Key
 }
 
-// FunderKey returns the store key to retrieve a Funder from the index fields
+// FunderKey returns the store Key to retrieve a Funder from the index fields
 func FunderKey(funder string, poolId uint64) []byte {
-	return keyPrefix{}.aString(funder).aInt(poolId).key
+	return KeyPrefixBuilder{}.AString(funder).AInt(poolId).Key
 }
 
-// ProposalKey returns the store key to retrieve a Proposal from the index fields
+// ProposalKey returns the store Key to retrieve a Proposal from the index fields
 func ProposalKey(bundleId string) []byte {
-	return keyPrefix{}.aString(bundleId).key
+	return KeyPrefixBuilder{}.AString(bundleId).Key
 }
 
-// StakerKey returns the store key to retrieve a Staker from the index fields
+// StakerKey returns the store Key to retrieve a Staker from the index fields
 func StakerKey(staker string, poolId uint64) []byte {
-	return keyPrefix{}.aString(staker).aInt(poolId).key
+	return KeyPrefixBuilder{}.AString(staker).AInt(poolId).Key
 }
 
-// UnbondingEntriesKey returns the store key to retrieve a UnbondingEntries from the index fields
+// UnbondingEntriesKey returns the store Key to retrieve a UnbondingEntries from the index fields
 func UnbondingEntriesKey(index uint64) []byte {
-	return keyPrefix{}.aInt(index).key
+	return KeyPrefixBuilder{}.AInt(index).Key
 }
 
-// UnbondingEntriesByDelegatorKey returns the store key to retrieve a UnbondingEntries from the index fields
-// Index is still needed to make key unique
+// UnbondingEntriesByDelegatorKey returns the store Key to retrieve a UnbondingEntries from the index fields
+// Index is still needed to make Key unique
 func UnbondingEntriesByDelegatorKey(delegator string, index uint64) []byte {
-	return keyPrefix{}.aString(delegator).aInt(index).key
+	return KeyPrefixBuilder{}.AString(delegator).AInt(index).Key
 }
 
-type keyPrefix struct {
-	key []byte
+type KeyPrefixBuilder struct {
+	Key []byte
 }
 
-func (k keyPrefix) aInt(n uint64) keyPrefix {
+func (k KeyPrefixBuilder) AInt(n uint64) KeyPrefixBuilder {
 	indexBytes := make([]byte, 8)
 	binary.BigEndian.PutUint64(indexBytes, n)
-	k.key = append(k.key, indexBytes...)
-	k.key = append(k.key, []byte("/")...)
+	k.Key = append(k.Key, indexBytes...)
+	k.Key = append(k.Key, []byte("/")...)
 	return k
 }
 
-func (k keyPrefix) aString(s string) keyPrefix {
-	k.key = append(k.key, []byte(s)...)
-	k.key = append(k.key, []byte("/")...)
+func (k KeyPrefixBuilder) AString(s string) KeyPrefixBuilder {
+	k.Key = append(k.Key, []byte(s)...)
+	k.Key = append(k.Key, []byte("/")...)
 	return k
 }

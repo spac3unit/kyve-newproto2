@@ -10,6 +10,9 @@ import (
 	"google.golang.org/grpc/status"
 )
 
+// StakersList returns a list of all validators for a given pool with their current stake,
+// total delegation and additional information (moniker, website, etc.)
+// This query is not paginated as it contains a maximum of types.MAX_STAKERS entries
 func (k Keeper) StakersList(goCtx context.Context, req *types.QueryStakersListRequest) (*types.QueryStakersListResponse, error) {
 	if req == nil {
 		return nil, status.Error(codes.InvalidArgument, "invalid request")
@@ -17,16 +20,16 @@ func (k Keeper) StakersList(goCtx context.Context, req *types.QueryStakersListRe
 
 	ctx := sdk.UnwrapSDKContext(goCtx)
 
-	var stakers []*types.StakerResponse
+	response := types.QueryStakersListResponse{}
 
 	// Load pool
-	pool, found := k.GetPool(ctx, req.Id)
+	pool, found := k.GetPool(ctx, req.PoolId)
 	if !found {
-		return nil, sdkErrors.Wrapf(sdkErrors.ErrNotFound, types.ErrPoolNotFound.Error(), req.Id)
+		return nil, sdkErrors.Wrapf(sdkErrors.ErrNotFound, types.ErrPoolNotFound.Error(), req.PoolId)
 	}
 
 	for _, account := range pool.Stakers {
-		staker, _ := k.GetStaker(ctx, account, req.Id)
+		staker, _ := k.GetStaker(ctx, account, req.PoolId)
 
 		stakerResponse := types.StakerResponse{
 			Staker:          staker.Account,
@@ -41,16 +44,12 @@ func (k Keeper) StakersList(goCtx context.Context, req *types.QueryStakersListRe
 			Logo:            staker.Logo,
 		}
 
-		poolDelegationData, found := k.GetDelegationPoolData(ctx, staker.PoolId, staker.Account)
+		// Fetch total delegation for staker, as it is stored in DelegationPoolData
+		poolDelegationData, _ := k.GetDelegationPoolData(ctx, staker.PoolId, staker.Account)
+		stakerResponse.TotalDelegation = poolDelegationData.TotalDelegation
 
-		if found {
-			stakerResponse.TotalDelegation = poolDelegationData.TotalDelegation
-		}
-
-		stakers = append(stakers, &stakerResponse)
+		response.Stakers = append(response.Stakers, &stakerResponse)
 	}
 
-	return &types.QueryStakersListResponse{
-		Stakers: stakers,
-	}, nil
+	return &response, nil
 }

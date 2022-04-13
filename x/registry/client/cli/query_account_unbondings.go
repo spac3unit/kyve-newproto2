@@ -1,35 +1,36 @@
 package cli
 
 import (
-	"context"
+	"strconv"
 
 	"github.com/KYVENetwork/chain/x/registry/types"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
-	"github.com/spf13/cast"
 	"github.com/spf13/cobra"
 )
 
-func CmdShowDelegator() *cobra.Command {
+var _ = strconv.Itoa(0)
+
+func CmdAccountUnbondings() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "show-delegator [id]",
-		Short: "shows a Delegator",
+		Use:   "account-unbondings [address]",
+		Short: "Query account-unbondings",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) (err error) {
-			clientCtx := client.GetClientContextFromCmd(cmd)
+			reqAddress := args[0]
 
-			queryClient := types.NewQueryClient(clientCtx)
-
-			argId, err := cast.ToUint64E(args[0])
+			clientCtx, err := client.GetClientTxContext(cmd)
 			if err != nil {
 				return err
 			}
 
-			params := &types.QueryDelegatorRequest{
-				PoolId: argId,
+			queryClient := types.NewQueryClient(clientCtx)
+
+			params := &types.QueryAccountUnbondingsRequest{
+				Address: reqAddress,
 			}
 
-			res, err := queryClient.Delegator(context.Background(), params)
+			res, err := queryClient.AccountUnbondings(cmd.Context(), params)
 			if err != nil {
 				return err
 			}

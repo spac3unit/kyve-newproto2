@@ -2,41 +2,49 @@ package keeper
 
 import (
 	"context"
+	"github.com/cosmos/cosmos-sdk/store/prefix"
+	sdkErrors "github.com/cosmos/cosmos-sdk/types/errors"
+	"github.com/cosmos/cosmos-sdk/types/query"
 
 	"github.com/KYVENetwork/chain/x/registry/types"
-	"github.com/cosmos/cosmos-sdk/store/prefix"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/cosmos-sdk/types/query"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
 
-func (k Keeper) AccountDelegationList(goCtx context.Context, req *types.QueryAccountDelegationListRequest) (*types.QueryAccountDelegationListResponse, error) {
+// DelegatorsByPoolAndStaker returns all delegators for a specific pool that delegated to the given staker address
+// It also returns the pool-object and the delegation information for that pool
+// Pagination is supported
+func (k Keeper) DelegatorsByPoolAndStaker(goCtx context.Context, req *types.QueryDelegatorsByPoolAndStakerRequest) (*types.QueryDelegatorsByPoolAndStakerResponse, error) {
 	if req == nil {
 		return nil, status.Error(codes.InvalidArgument, "invalid request")
 	}
 
-	var delegated []types.DelegatorResponse
 	ctx := sdk.UnwrapSDKContext(goCtx)
 
+	pool, found := k.GetPool(ctx, req.PoolId)
+	if !found {
+		return nil, sdkErrors.Wrapf(sdkErrors.ErrNotFound, types.ErrPoolNotFound.Error(), req.PoolId)
+	}
+
+	var delegators []types.StakerDelegatorResponse
+
 	store := ctx.KVStore(k.storeKey)
-	delegatorStore := prefix.NewStore(store, types.KeyPrefix(types.DelegatorKeyPrefix))
+	// Build prefix. Store is already indexed in an optimal way
+	prefixBuilder := types.KeyPrefixBuilder{Key: types.KeyPrefix(types.DelegatorKeyPrefix)}.AInt(pool.Id).AString(req.Staker).Key
+	delegatorStore := prefix.NewStore(store, prefixBuilder)
 
 	pageRes, err := query.FilteredPaginate(delegatorStore, req.Pagination, func(key []byte, value []byte, accumulate bool) (bool, error) {
-		var delegator types.Delegator
-
-		if err := k.cdc.Unmarshal(value, &delegator); err != nil {
-			return false, nil
-		}
-
-		if delegator.Delegator != req.Address {
-			return false, nil
-		}
 
 		if accumulate {
 
-			pool, _ := k.GetPool(ctx, delegator.Id)
+			var delegator types.Delegator
 
+			if err := k.cdc.Unmarshal(value, &delegator); err != nil {
+				return false, nil
+			}
+
+			// Calculate current rewards for the delegator
 			f1 := F1Distribution{
 				k:                k,
 				ctx:              ctx,
@@ -45,15 +53,11 @@ func (k Keeper) AccountDelegationList(goCtx context.Context, req *types.QueryAcc
 				delegatorAddress: delegator.Delegator,
 			}
 
-			delegationPoolData, _ := k.GetDelegationPoolData(ctx, pool.Id, delegator.Staker)
-
-			delegated = append(delegated, types.DelegatorResponse{
-				Account:            req.Address,
-				Pool:               &pool,
-				CurrentReward:      f1.getCurrentReward(),
-				DelegationAmount:   delegator.DelegationAmount,
-				Staker:             delegator.Staker,
-				DelegationPoolData: &delegationPoolData,
+			delegators = append(delegators, types.StakerDelegatorResponse{
+				Delegator:        delegator.Delegator,
+				CurrentReward:    f1.getCurrentReward(),
+				DelegationAmount: delegator.DelegationAmount,
+				Staker:           req.Staker,
 			})
 		}
 
@@ -64,8 +68,12 @@ func (k Keeper) AccountDelegationList(goCtx context.Context, req *types.QueryAcc
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
-	return &types.QueryAccountDelegationListResponse{
-		Delegations: delegated,
-		Pagination:  pageRes,
+	delegationPoolData, _ := k.GetDelegationPoolData(ctx, pool.Id, req.Staker)
+
+	return &types.QueryDelegatorsByPoolAndStakerResponse{
+		Delegators:         delegators,
+		Pool:               &pool,
+		DelegationPoolData: &delegationPoolData,
+		Pagination:         pageRes,
 	}, nil
 }

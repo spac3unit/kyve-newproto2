@@ -47,6 +47,9 @@ func (k Keeper) Proposals(c context.Context, req *types.QueryProposalsRequest) (
 	return &types.QueryProposalsResponse{Proposals: proposals, Pagination: pageRes}, nil
 }
 
+// Proposal returns validated Proposal for a given bundle_id
+// This method is used to confirm if the provided bundle_id (e.g. from a third party)
+// is an actual valid bundle uploaded to KYVE.
 func (k Keeper) Proposal(c context.Context, req *types.QueryProposalRequest) (*types.QueryProposalResponse, error) {
 	if req == nil {
 		return nil, status.Error(codes.InvalidArgument, "invalid request")

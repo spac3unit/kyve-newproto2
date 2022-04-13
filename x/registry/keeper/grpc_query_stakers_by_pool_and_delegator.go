@@ -1,6 +1,7 @@
 package keeper
 
 import (
+	"bytes"
 	"context"
 
 	"github.com/cosmos/cosmos-sdk/store/prefix"
@@ -13,6 +14,9 @@ import (
 	"google.golang.org/grpc/status"
 )
 
+// StakersByPoolAndDelegator makes it possible to see all stakers for a given pool to which the user has delegated to.
+// Also returns current rewards and general delegation information and the pool-object.
+// Supports pagination
 func (k Keeper) StakersByPoolAndDelegator(goCtx context.Context, req *types.QueryStakersByPoolAndDelegatorRequest) (*types.QueryStakersByPoolAndDelegatorResponse, error) {
 	if req == nil {
 		return nil, status.Error(codes.InvalidArgument, "invalid request")
@@ -28,24 +32,22 @@ func (k Keeper) StakersByPoolAndDelegator(goCtx context.Context, req *types.Quer
 	var stakers []types.DelegationForStakerResponse
 
 	store := ctx.KVStore(k.storeKey)
-	delegatorStore := prefix.NewStore(store, types.KeyPrefix(types.DelegatorKeyPrefix))
+	// Build prefix. TODO find better solution to increase performance
+	prefixBuilder := types.KeyPrefixBuilder{Key: types.KeyPrefix(types.DelegatorKeyPrefix)}.AInt(pool.Id).Key
+	delegatorStore := prefix.NewStore(store, prefixBuilder)
 
 	pageRes, err := query.FilteredPaginate(delegatorStore, req.Pagination, func(key []byte, value []byte, accumulate bool) (bool, error) {
-		var delegator types.Delegator
 
-		if err := k.cdc.Unmarshal(value, &delegator); err != nil {
-			return false, nil
-		}
-
-		if delegator.Delegator != req.Delegator {
-			return false, nil
-		}
-
-		if delegator.Id != req.PoolId {
+		// Check if entry belongs to given address (delegator)
+		if bytes.Compare(key[44:87], []byte(req.Delegator)) != 0 {
 			return false, nil
 		}
 
 		if accumulate {
+			var delegator types.Delegator
+			if err := k.cdc.Unmarshal(value, &delegator); err != nil {
+				return false, nil
+			}
 
 			f1 := F1Distribution{
 				k:                k,
@@ -64,7 +66,6 @@ func (k Keeper) StakersByPoolAndDelegator(goCtx context.Context, req *types.Quer
 				TotalDelegationAmount: delegationPoolData.TotalDelegation,
 				DelegatorCount:        delegationPoolData.DelegatorCount,
 			})
-
 		}
 
 		return true, nil

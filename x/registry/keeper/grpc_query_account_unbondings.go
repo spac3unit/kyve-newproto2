@@ -11,6 +11,9 @@ import (
 	"google.golang.org/grpc/status"
 )
 
+// AccountUnbondings returns all pending unbondings for the given account.
+// They contain the information on when the unbonding occurs and who many $KYVE the user will receive
+// Keep in mind that the unbonding amount for unstaking can be smaller when the user got slashed during the unbonding
 func (k Keeper) AccountUnbondings(c context.Context, req *types.QueryAccountUnbondingsRequest) (*types.QueryAccountUnbondingsResponse, error) {
 	if req == nil {
 		return nil, status.Error(codes.InvalidArgument, "invalid request")
@@ -20,15 +23,18 @@ func (k Keeper) AccountUnbondings(c context.Context, req *types.QueryAccountUnbo
 	ctx := sdk.UnwrapSDKContext(c)
 
 	store := ctx.KVStore(k.storeKey)
-	unbondingEntriesStore := prefix.NewStore(store, append(types.KeyPrefix(types.UnbondingEntriesKeyPrefixByDelegator), types.KeyPrefix(req.Address)...))
+	// Build prefix. Store is already indexed in an optimal way
+	prefixBuilder := types.KeyPrefixBuilder{Key: types.KeyPrefix(types.UnbondingEntriesKeyPrefixByDelegator)}.AString(req.Address).Key
+	unbondingEntriesStore := prefix.NewStore(store, prefixBuilder)
 
 	pageRes, err := query.FilteredPaginate(unbondingEntriesStore, req.Pagination, func(key []byte, value []byte, accumulate bool) (bool, error) {
-		var unbondingEntry types.UnbondingEntries
-		if err := k.cdc.Unmarshal(value, &unbondingEntry); err != nil {
-			return false, err
-		}
 
 		if accumulate {
+			var unbondingEntry types.UnbondingEntries
+			if err := k.cdc.Unmarshal(value, &unbondingEntry); err != nil {
+				return false, err
+			}
+
 			unbondingEntries = append(unbondingEntries, unbondingEntry)
 		}
 

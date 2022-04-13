@@ -6,23 +6,18 @@ import (
 	"github.com/KYVENetwork/chain/x/registry/types"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
-	"github.com/spf13/cast"
 	"github.com/spf13/cobra"
 )
 
 var _ = strconv.Itoa(0)
 
-func CmdStakingAmount() *cobra.Command {
+func CmdAccountDelegationList() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "staking-amount [id] [staker]",
-		Short: "Query stakingAmount",
-		Args:  cobra.ExactArgs(2),
+		Use:   "account-delegation-list [address]",
+		Short: "Query account-delegation-list",
+		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) (err error) {
-			reqId, err := cast.ToUint64E(args[0])
-			if err != nil {
-				return err
-			}
-			reqStaker := args[1]
+			reqAddress := args[0]
 
 			clientCtx, err := client.GetClientTxContext(cmd)
 			if err != nil {
@@ -31,13 +26,11 @@ func CmdStakingAmount() *cobra.Command {
 
 			queryClient := types.NewQueryClient(clientCtx)
 
-			params := &types.QueryStakingAmountRequest{
-
-				Id:     reqId,
-				Staker: reqStaker,
+			params := &types.QueryAccountDelegationListRequest{
+				Address: reqAddress,
 			}
 
-			res, err := queryClient.StakingAmount(cmd.Context(), params)
+			res, err := queryClient.AccountDelegationList(cmd.Context(), params)
 			if err != nil {
 				return err
 			}

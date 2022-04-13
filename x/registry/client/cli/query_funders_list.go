@@ -14,7 +14,7 @@ var _ = strconv.Itoa(0)
 
 func CmdFundersList() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "funders-list [id]",
+		Use:   "funders-list [pool_id]",
 		Short: "Query funders-list",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) (err error) {
@@ -32,7 +32,7 @@ func CmdFundersList() *cobra.Command {
 
 			params := &types.QueryFundersListRequest{
 
-				Id: reqId,
+				PoolId: reqId,
 			}
 
 			res, err := queryClient.FundersList(cmd.Context(), params)

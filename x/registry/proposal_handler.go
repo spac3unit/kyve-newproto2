@@ -36,7 +36,7 @@ func handleCreatePoolProposal(ctx sdk.Context, k keeper.Keeper, p *types.CreateP
 		Config:         p.Config,
 		HeightArchived: p.StartHeight,
 		StartHeight:    p.StartHeight,
-		UploadInterval:  p.UploadInterval,
+		UploadInterval: p.UploadInterval,
 		OperatingCost:  p.OperatingCost,
 		BundleProposal: &types.BundleProposal{
 			FromHeight: p.StartHeight,

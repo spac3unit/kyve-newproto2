@@ -2,7 +2,6 @@ package keeper
 
 import (
 	"context"
-	"fmt"
 	"github.com/KYVENetwork/chain/x/registry/types"
 	"github.com/cosmos/cosmos-sdk/store/prefix"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -11,6 +10,8 @@ import (
 	"google.golang.org/grpc/status"
 )
 
+// AccountFundedList returns all pools the given user has funded into.
+// Supports Pagination.
 func (k Keeper) AccountFundedList(goCtx context.Context, req *types.QueryAccountFundedListRequest) (*types.QueryAccountFundedListResponse, error) {
 	if req == nil {
 		return nil, status.Error(codes.InvalidArgument, "invalid request")
@@ -20,25 +21,22 @@ func (k Keeper) AccountFundedList(goCtx context.Context, req *types.QueryAccount
 	ctx := sdk.UnwrapSDKContext(goCtx)
 
 	store := ctx.KVStore(k.storeKey)
-	funderStore := prefix.NewStore(store, types.KeyPrefix(types.FunderKeyPrefix))
+	// Build prefix. Store is already indexed in an optimal way
+	prefixBuilder := types.KeyPrefixBuilder{Key: types.KeyPrefix(types.FunderKeyPrefix)}.AString(req.Address).Key
+	funderStore := prefix.NewStore(store, prefixBuilder)
 
 	pageRes, err := query.FilteredPaginate(funderStore, req.Pagination, func(key []byte, value []byte, accumulate bool) (bool, error) {
-		var funder types.Funder
-		if err := k.cdc.Unmarshal(value, &funder); err != nil {
-			return false, err
-		}
-
-		// filter account
-		if funder.Account != req.Address {
-			return false, nil
-		}
 
 		if accumulate {
+
+			var funder types.Funder
+			if err := k.cdc.Unmarshal(value, &funder); err != nil {
+				return false, err
+			}
+
 			pool, _ := k.GetPool(ctx, funder.PoolId)
 
 			funded = append(funded, types.Funded{
-				// TODO Deprecated
-				FundId:  fmt.Sprintf("%v %s", pool.Id, pool.LowestFunder),
 				Account: funder.Account,
 				Amount:  funder.Amount,
 				Pool:    &pool,

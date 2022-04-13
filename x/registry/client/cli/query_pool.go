@@ -14,7 +14,7 @@ import (
 func CmdListPool() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "list-pool",
-		Short: "list all pool",
+		Short: "list all pools",
 		Args:  cobra.ExactArgs(3),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			reqSearch := args[0]

@@ -12576,7 +12576,9 @@ paths:
         - Query
   '/kyve/registry/v1beta1/account_assets/{address}':
     get:
-      summary: AccountAssets ...
+      summary: >-
+        AccountAssets returns an overview of the sum of all balances for a given
+        user. e.g. balance, staking, funding, etc.
       operationId: KyveRegistryV1Beta1AccountAssets
       responses:
         '200':
@@ -12596,26 +12598,22 @@ paths:
                 type: string
                 format: uint64
                 description: protocol_delegation ...
-              protocolUnbonding:
+              protocolStakingUnbonding:
                 type: string
                 format: uint64
-                description: protocol_unbonding ...
+                description: protocol_staking_unbonding ...
+              protocolDelegationUnbonding:
+                type: string
+                format: uint64
+                description: protocol_staking_unbonding ...
               protocolRewards:
                 type: string
                 format: uint64
                 description: protocol_rewards ...
-              validatorStaking:
+              protocolFunding:
                 type: string
                 format: uint64
-                description: validator_staking ...
-              validatorDelegation:
-                type: string
-                format: uint64
-                description: validator_delegation ...
-              validatorUnbonding:
-                type: string
-                format: uint64
-                description: validator_unbonding ...
+                description: protocol_funding ...
             description: >-
               QueryAccountAssetsResponse is the response type for the
               Query/AccountAssets RPC method.
@@ -12935,7 +12933,7 @@ paths:
         - Query
   '/kyve/registry/v1beta1/account_funded_list/{address}':
     get:
-      summary: AccountFundedList ...
+      summary: AccountFundedList returns all pools the given user has funded into.
       operationId: KyveRegistryV1Beta1AccountFundedList
       responses:
         '200':
@@ -12948,9 +12946,6 @@ paths:
                 items:
                   type: object
                   properties:
-                    fundId:
-                      type: string
-                      description: fund_id ...
                     account:
                       type: string
                       description: account ...
@@ -13696,82 +13691,10 @@ paths:
           type: string
       tags:
         - Query
-  '/kyve/registry/v1beta1/delegator/{delegator}/{staker}/{poolId}':
-    get:
-      summary: Delegator ...
-      operationId: KyveRegistryV1Beta1Delegator
-      responses:
-        '200':
-          description: A successful response.
-          schema:
-            type: object
-            properties:
-              delegator:
-                description: delegator ...
-                type: object
-                properties:
-                  id:
-                    type: string
-                    format: uint64
-                    description: id ...
-                  kIndex:
-                    type: string
-                    format: uint64
-                    description: k_index ...
-                  delegationAmount:
-                    type: string
-                    format: uint64
-                    description: delegation_amount ...
-                  staker:
-                    type: string
-                    description: staker ...
-                  delegator:
-                    type: string
-                    description: delegator ...
-            description: >-
-              QueryDelegatorResponse is the response type for the
-              Query/Delegator RPC method.
-        default:
-          description: An unexpected error response.
-          schema:
-            type: object
-            properties:
-              code:
-                type: integer
-                format: int32
-              message:
-                type: string
-              details:
-                type: array
-                items:
-                  type: object
-                  properties:
-                    '@type':
-                      type: string
-                  additionalProperties: {}
-      parameters:
-        - name: delegator
-          description: delegator ...
-          in: path
-          required: true
-          type: string
-        - name: staker
-          description: staker ...
-          in: path
-          required: true
-          type: string
-        - name: poolId
-          description: pool_id defines the unique ID of the pool.
-          in: path
-          required: true
-          type: string
-          format: uint64
-      tags:
-        - Query
   '/kyve/registry/v1beta1/delegators_by_pool_and_staker/{poolId}/{staker}':
     get:
-      summary: AccountStakersDelegationList ...
-      operationId: KyveRegistryV1Beta1AccountStakersDelegationList
+      summary: DelegatorsByPoolAndStaker ...
+      operationId: KyveRegistryV1Beta1DelegatorsByPoolAndStaker
       responses:
         '200':
           description: A successful response.
@@ -13972,8 +13895,8 @@ paths:
 
                       was set, its value is undefined otherwise
             description: >-
-              QueryAccountStakersDelegationListResponse is the response type for
-              the Query/AccountStakersDelegationList RPC method.
+              QueryDelegatorsByPoolAndStakerResponse is the response type for
+              the Query/DelegatorsByPoolAndStaker RPC method.
         default:
           description: An unexpected error response.
           schema:
@@ -14062,9 +13985,11 @@ paths:
           type: boolean
       tags:
         - Query
-  '/kyve/registry/v1beta1/funders_list/{id}':
+  '/kyve/registry/v1beta1/funders_list/{poolId}':
     get:
-      summary: FundersList ...
+      summary: >-
+        FundersList returns all funder addresses with their corresponding
+        funding amount for a given pool
       operationId: KyveRegistryV1Beta1FundersList
       responses:
         '200':
@@ -14112,61 +14037,12 @@ paths:
                       type: string
                   additionalProperties: {}
       parameters:
-        - name: id
-          description: id defines the unique ID of the pool.
+        - name: poolId
+          description: pool_id defines the unique ID of the pool.
           in: path
           required: true
           type: string
           format: uint64
-      tags:
-        - Query
-  '/kyve/registry/v1beta1/funding_amount/{id}/{funder}':
-    get:
-      summary: FundingAmount ...
-      operationId: KyveRegistryV1Beta1FundingAmount
-      responses:
-        '200':
-          description: A successful response.
-          schema:
-            type: object
-            properties:
-              amount:
-                type: string
-                format: uint64
-                description: amount ...
-            description: >-
-              QueryFundingAmountResponse is the response type for the
-              Query/FundingAmount RPC method.
-        default:
-          description: An unexpected error response.
-          schema:
-            type: object
-            properties:
-              code:
-                type: integer
-                format: int32
-              message:
-                type: string
-              details:
-                type: array
-                items:
-                  type: object
-                  properties:
-                    '@type':
-                      type: string
-                  additionalProperties: {}
-      parameters:
-        - name: id
-          description: id defines the unique ID of the pool.
-          in: path
-          required: true
-          type: string
-          format: uint64
-        - name: funder
-          description: funder ...
-          in: path
-          required: true
-          type: string
       tags:
         - Query
   /kyve/registry/v1beta1/params:
@@ -15251,9 +15127,11 @@ paths:
           type: boolean
       tags:
         - Query
-  '/kyve/registry/v1beta1/stakers_list/{id}':
+  '/kyve/registry/v1beta1/stakers_list/{poolId}':
     get:
-      summary: StakersList ...
+      summary: >-
+        StakersList returns all staker addresses with their corresponding
+        staking amount for a given pool
       operationId: KyveRegistryV1Beta1StakersList
       responses:
         '200':
@@ -15324,61 +15202,12 @@ paths:
                       type: string
                   additionalProperties: {}
       parameters:
-        - name: id
-          description: id defines the unique ID of the pool.
+        - name: poolId
+          description: pool_id defines the unique ID of the pool.
           in: path
           required: true
           type: string
           format: uint64
-      tags:
-        - Query
-  '/kyve/registry/v1beta1/staking_amount/{id}/{staker}':
-    get:
-      summary: StakingAmount ...
-      operationId: KyveRegistryV1Beta1StakingAmount
-      responses:
-        '200':
-          description: A successful response.
-          schema:
-            type: object
-            properties:
-              amount:
-                type: string
-                format: uint64
-                description: amount ...
-            description: >-
-              QueryStakingAmountResponse is the response type for the
-              Query/StakingAmount RPC method.
-        default:
-          description: An unexpected error response.
-          schema:
-            type: object
-            properties:
-              code:
-                type: integer
-                format: int32
-              message:
-                type: string
-              details:
-                type: array
-                items:
-                  type: object
-                  properties:
-                    '@type':
-                      type: string
-                  additionalProperties: {}
-      parameters:
-        - name: id
-          description: id defines the unique ID of the pool.
-          in: path
-          required: true
-          type: string
-          format: uint64
-        - name: staker
-          description: staker ...
-          in: path
-          required: true
-          type: string
       tags:
         - Query
 definitions:
@@ -22823,28 +22652,6 @@ definitions:
         type: boolean
         description: latest_index_was_undelegation ...
     description: DelegationPoolData ...
-  kyve.registry.v1beta1.Delegator:
-    type: object
-    properties:
-      id:
-        type: string
-        format: uint64
-        description: id ...
-      kIndex:
-        type: string
-        format: uint64
-        description: k_index ...
-      delegationAmount:
-        type: string
-        format: uint64
-        description: delegation_amount ...
-      staker:
-        type: string
-        description: staker ...
-      delegator:
-        type: string
-        description: delegator ...
-    description: Delegator ...
   kyve.registry.v1beta1.DelegatorResponse:
     type: object
     properties:
@@ -23020,9 +22827,6 @@ definitions:
   kyve.registry.v1beta1.Funded:
     type: object
     properties:
-      fundId:
-        type: string
-        description: fund_id ...
       account:
         type: string
         description: account ...
@@ -23396,26 +23200,22 @@ definitions:
         type: string
         format: uint64
         description: protocol_delegation ...
-      protocolUnbonding:
+      protocolStakingUnbonding:
         type: string
         format: uint64
-        description: protocol_unbonding ...
+        description: protocol_staking_unbonding ...
+      protocolDelegationUnbonding:
+        type: string
+        format: uint64
+        description: protocol_staking_unbonding ...
       protocolRewards:
         type: string
         format: uint64
         description: protocol_rewards ...
-      validatorStaking:
+      protocolFunding:
         type: string
         format: uint64
-        description: validator_staking ...
-      validatorDelegation:
-        type: string
-        format: uint64
-        description: validator_delegation ...
-      validatorUnbonding:
-        type: string
-        format: uint64
-        description: validator_unbonding ...
+        description: protocol_funding ...
     description: >-
       QueryAccountAssetsResponse is the response type for the
       Query/AccountAssets RPC method.
@@ -23626,9 +23426,6 @@ definitions:
         items:
           type: object
           properties:
-            fundId:
-              type: string
-              description: fund_id ...
             account:
               type: string
               description: account ...
@@ -23956,7 +23753,82 @@ definitions:
     description: >-
       QueryAccountStakedListResponse is the response type for the
       Query/StakedList RPC method.
-  kyve.registry.v1beta1.QueryAccountStakersDelegationListResponse:
+  kyve.registry.v1beta1.QueryAccountUnbondingsResponse:
+    type: object
+    properties:
+      unbondingEntries:
+        type: array
+        items:
+          type: object
+          properties:
+            index:
+              type: string
+              format: uint64
+              description: index ...
+            poolId:
+              type: string
+              format: uint64
+              description: pool_id ...
+            staker:
+              type: string
+              description: staker ...
+            delegator:
+              type: string
+              description: delegator ...
+            creationTime:
+              type: string
+              format: uint64
+              description: creation_time ...
+            amount:
+              type: string
+              format: uint64
+              description: amount ...
+          description: UnbondingEntries ...
+        description: unbonding_entries ...
+      pagination:
+        description: pagination defines the pagination in the response.
+        type: object
+        properties:
+          nextKey:
+            type: string
+            format: byte
+            title: |-
+              next_key is the key to be passed to PageRequest.key to
+              query the next page most efficiently
+          total:
+            type: string
+            format: uint64
+            title: >-
+              total is total number of results available if
+              PageRequest.count_total
+
+              was set, its value is undefined otherwise
+    description: QueryUnbondingEntriesByDelegatorResponse ...
+  kyve.registry.v1beta1.QueryCanProposeResponse:
+    type: object
+    properties:
+      possible:
+        type: boolean
+        description: possible ...
+      reason:
+        type: string
+        description: reason ...
+    description: >-
+      QueryCanProposeResponse is the response type for the Query/CanPropose RPC
+      method.
+  kyve.registry.v1beta1.QueryCanVoteResponse:
+    type: object
+    properties:
+      possible:
+        type: boolean
+        description: possible ...
+      reason:
+        type: string
+        description: reason ...
+    description: >-
+      QueryCanVoteResponse is the response type for the Query/CanVote RPC
+      method.
+  kyve.registry.v1beta1.QueryDelegatorsByPoolAndStakerResponse:
     type: object
     properties:
       delegators:
@@ -24153,111 +24025,8 @@ definitions:
 
               was set, its value is undefined otherwise
     description: >-
-      QueryAccountStakersDelegationListResponse is the response type for the
-      Query/AccountStakersDelegationList RPC method.
-  kyve.registry.v1beta1.QueryAccountUnbondingsResponse:
-    type: object
-    properties:
-      unbondingEntries:
-        type: array
-        items:
-          type: object
-          properties:
-            index:
-              type: string
-              format: uint64
-              description: index ...
-            poolId:
-              type: string
-              format: uint64
-              description: pool_id ...
-            staker:
-              type: string
-              description: staker ...
-            delegator:
-              type: string
-              description: delegator ...
-            creationTime:
-              type: string
-              format: uint64
-              description: creation_time ...
-            amount:
-              type: string
-              format: uint64
-              description: amount ...
-          description: UnbondingEntries ...
-        description: unbonding_entries ...
-      pagination:
-        description: pagination defines the pagination in the response.
-        type: object
-        properties:
-          nextKey:
-            type: string
-            format: byte
-            title: |-
-              next_key is the key to be passed to PageRequest.key to
-              query the next page most efficiently
-          total:
-            type: string
-            format: uint64
-            title: >-
-              total is total number of results available if
-              PageRequest.count_total
-
-              was set, its value is undefined otherwise
-    description: QueryUnbondingEntriesByDelegatorResponse ...
-  kyve.registry.v1beta1.QueryCanProposeResponse:
-    type: object
-    properties:
-      possible:
-        type: boolean
-        description: possible ...
-      reason:
-        type: string
-        description: reason ...
-    description: >-
-      QueryCanProposeResponse is the response type for the Query/CanPropose RPC
-      method.
-  kyve.registry.v1beta1.QueryCanVoteResponse:
-    type: object
-    properties:
-      possible:
-        type: boolean
-        description: possible ...
-      reason:
-        type: string
-        description: reason ...
-    description: >-
-      QueryCanVoteResponse is the response type for the Query/CanVote RPC
-      method.
-  kyve.registry.v1beta1.QueryDelegatorResponse:
-    type: object
-    properties:
-      delegator:
-        description: delegator ...
-        type: object
-        properties:
-          id:
-            type: string
-            format: uint64
-            description: id ...
-          kIndex:
-            type: string
-            format: uint64
-            description: k_index ...
-          delegationAmount:
-            type: string
-            format: uint64
-            description: delegation_amount ...
-          staker:
-            type: string
-            description: staker ...
-          delegator:
-            type: string
-            description: delegator ...
-    description: >-
-      QueryDelegatorResponse is the response type for the Query/Delegator RPC
-      method.
+      QueryDelegatorsByPoolAndStakerResponse is the response type for the
+      Query/DelegatorsByPoolAndStaker RPC method.
   kyve.registry.v1beta1.QueryFundersListResponse:
     type: object
     properties:
@@ -24282,16 +24051,6 @@ definitions:
     description: >-
       QueryFundersListResponse is the response type for the Query/FundersList
       RPC method.
-  kyve.registry.v1beta1.QueryFundingAmountResponse:
-    type: object
-    properties:
-      amount:
-        type: string
-        format: uint64
-        description: amount ...
-    description: >-
-      QueryFundingAmountResponse is the response type for the
-      Query/FundingAmount RPC method.
   kyve.registry.v1beta1.QueryParamsResponse:
     type: object
     properties:
@@ -24956,16 +24715,6 @@ definitions:
     description: >-
       QueryStakersListResponse is the response type for the Query/StakersList
       RPC method.
-  kyve.registry.v1beta1.QueryStakingAmountResponse:
-    type: object
-    properties:
-      amount:
-        type: string
-        format: uint64
-        description: amount ...
-    description: >-
-      QueryStakingAmountResponse is the response type for the
-      Query/StakingAmount RPC method.
   kyve.registry.v1beta1.Staked:
     type: object
     properties:

@@ -10,6 +10,9 @@ import (
 	"google.golang.org/grpc/status"
 )
 
+// AccountStakedList returns all pools (with additional data) a user has staked into.
+// Also returns the amount and unbonding amount
+// Supports Pagination
 func (k Keeper) AccountStakedList(goCtx context.Context, req *types.QueryAccountStakedListRequest) (*types.QueryAccountStakedListResponse, error) {
 	if req == nil {
 		return nil, status.Error(codes.InvalidArgument, "invalid request")
@@ -19,19 +22,19 @@ func (k Keeper) AccountStakedList(goCtx context.Context, req *types.QueryAccount
 	ctx := sdk.UnwrapSDKContext(goCtx)
 
 	store := ctx.KVStore(k.storeKey)
-	stakerStore := prefix.NewStore(store, types.KeyPrefix(types.StakerKeyPrefix))
+	// Build prefix. Store is already indexed in an optimal way
+	prefixBuilder := types.KeyPrefixBuilder{Key: types.KeyPrefix(types.StakerKeyPrefix)}.AString(req.Address).Key
+	stakerStore := prefix.NewStore(store, prefixBuilder)
 
 	pageRes, err := query.FilteredPaginate(stakerStore, req.Pagination, func(key []byte, value []byte, accumulate bool) (bool, error) {
-		var staker types.Staker
-		if err := k.cdc.Unmarshal(value, &staker); err != nil {
-			return false, err
-		}
-
-		if staker.Account != req.Address {
-			return false, nil
-		}
 
 		if accumulate {
+
+			var staker types.Staker
+			if err := k.cdc.Unmarshal(value, &staker); err != nil {
+				return false, err
+			}
+
 			pool, _ := k.GetPool(ctx, staker.PoolId)
 
 			staked = append(staked, types.Staked{

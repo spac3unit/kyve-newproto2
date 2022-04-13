@@ -1,28 +1,23 @@
 package cli
 
 import (
-	"github.com/KYVENetwork/chain/x/registry/types"
 	"strconv"
 
+	"github.com/KYVENetwork/chain/x/registry/types"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
-	"github.com/spf13/cast"
 	"github.com/spf13/cobra"
 )
 
 var _ = strconv.Itoa(0)
 
-func CmdStakeInfo() *cobra.Command {
+func CmdAccountAssets() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "stake-info [pool-id] [staker]",
-		Short: "Query stake_info",
-		Args:  cobra.ExactArgs(2),
+		Use:   "account-assets [address]",
+		Short: "Query account assets",
+		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) (err error) {
-			reqPoolId, err := cast.ToUint64E(args[2])
-			if err != nil {
-				return err
-			}
-			reqStaker := args[1]
+			reqAddress := args[0]
 
 			clientCtx, err := client.GetClientTxContext(cmd)
 			if err != nil {
@@ -31,12 +26,11 @@ func CmdStakeInfo() *cobra.Command {
 
 			queryClient := types.NewQueryClient(clientCtx)
 
-			params := &types.QueryStakeInfoRequest{
-				PoolId: reqPoolId,
-				Staker: reqStaker,
+			params := &types.QueryAccountAssetsRequest{
+				Address: reqAddress,
 			}
 
-			res, err := queryClient.StakeInfo(cmd.Context(), params)
+			res, err := queryClient.AccountAssets(cmd.Context(), params)
 			if err != nil {
 				return err
 			}

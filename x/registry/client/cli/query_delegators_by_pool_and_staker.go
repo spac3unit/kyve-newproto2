@@ -12,9 +12,9 @@ import (
 
 var _ = strconv.Itoa(0)
 
-func CmdAccountStakersDelegationList() *cobra.Command {
+func CmdDelegatorsByPoolAndStaker() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "account-stakers-delegation-list [pool-id] [staker]",
+		Use:   "delegators-by-pool-and-staker [pool-id] [staker]",
 		Short: "Query account_stakers_delegation_list",
 		Args:  cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) (err error) {
@@ -31,7 +31,7 @@ func CmdAccountStakersDelegationList() *cobra.Command {
 
 			queryClient := types.NewQueryClient(clientCtx)
 
-			params := &types.QueryAccountStakersDelegationListRequest{
+			params := &types.QueryDelegatorsByPoolAndStakerRequest{
 
 				PoolId: reqPoolId,
 				Staker: reqStaker,
@@ -43,7 +43,7 @@ func CmdAccountStakersDelegationList() *cobra.Command {
 			}
 			params.Pagination = pageReq
 
-			res, err := queryClient.AccountStakersDelegationList(cmd.Context(), params)
+			res, err := queryClient.DelegatorsByPoolAndStaker(cmd.Context(), params)
 			if err != nil {
 				return err
 			}

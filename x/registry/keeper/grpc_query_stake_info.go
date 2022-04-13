@@ -12,6 +12,9 @@ import (
 	"google.golang.org/grpc/status"
 )
 
+// StakeInfo returns the current staking information for a given user and pool.
+// It is used by the protocol node to determine whether a node is able to participate
+// and to adjust the initial stake.
 func (k Keeper) StakeInfo(goCtx context.Context, req *types.QueryStakeInfoRequest) (*types.QueryStakeInfoResponse, error) {
 	if req == nil {
 		return nil, status.Error(codes.InvalidArgument, "invalid request")

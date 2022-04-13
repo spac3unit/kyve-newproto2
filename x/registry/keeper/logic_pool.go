@@ -164,7 +164,6 @@ func getDelegationWeight(delegation uint64) uint64 {
 			epsilon = x - xn
 		}
 		x = xn
-		println(x)
 	}
 
 	return (x - A) * 1_000_000_000

@@ -41,7 +41,7 @@ var (
 	DefaultNetworkFee string = "0.01"
 )
 
-// ParamKeyTable the param key table for launch module
+// ParamKeyTable the param Key table for launch module
 func ParamKeyTable() paramtypes.KeyTable {
 	return paramtypes.NewKeyTable().RegisterParamSet(&Params{})
 }
