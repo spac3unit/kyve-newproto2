@@ -46,11 +46,11 @@ func (k Keeper) HandleUploadTimeout(goCtx context.Context) {
 
 		staker, foundStaker := k.GetStaker(ctx, pool.BundleProposal.NextUploader, pool.Id)
 
-		// skip timeout slash if not enough nodes are online 
+		// skip timeout slash if staker is not found
 		if foundStaker {
 			// slash next_uploader for not uploading in time
 			slashAmount := k.slashStaker(ctx, &pool, staker.Account, k.TimeoutSlash(ctx))
-	
+
 			// emit slashing event
 			types.EmitSlashEvent(ctx, pool.Id, staker.Account, slashAmount)
 
@@ -59,12 +59,12 @@ func (k Keeper) HandleUploadTimeout(goCtx context.Context) {
 			// check if next uploader is still there or already removed
 			if foundStaker {
 				// Transfer remaining stake to account.
-				k.transferToAddress(ctx, staker.Account, staker.Amount)
-		
+				k.TransferToAddress(ctx, staker.Account, staker.Amount)
+
 				// remove current next_uploader
 				k.removeStaker(ctx, &pool, &staker)
 			}
-	
+
 			// Update current lowest staker
 			k.updateLowestStaker(ctx, &pool)
 		}
@@ -72,7 +72,7 @@ func (k Keeper) HandleUploadTimeout(goCtx context.Context) {
 		nextUploader := ""
 
 		if len(pool.Stakers) > 0 {
-			nextUploader = k.getNextUploaderByRandom(ctx, &pool, false)
+			nextUploader = k.getNextUploaderByRandom(ctx, &pool, pool.Stakers)
 		}
 
 		// update bundle proposal

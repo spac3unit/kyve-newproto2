@@ -23,6 +23,22 @@ func (k Keeper) CanPropose(goCtx context.Context, req *types.QueryCanProposeRequ
 		return nil, sdkErrors.Wrapf(sdkErrors.ErrNotFound, types.ErrPoolNotFound.Error(), req.PoolId)
 	}
 
+	// Check if enough nodes are online
+	if len(pool.Stakers) < 2 {
+		return &types.QueryCanProposeResponse{
+			Possible: false,
+			Reason:   "Not enough nodes online",
+		}, nil
+	}
+
+	// Check if pool has funds
+	if pool.TotalFunds == 0 {
+		return &types.QueryCanProposeResponse{
+			Possible: false,
+			Reason:   "Pool has run out of funds",
+		}, nil
+	}
+
 	// Check if pool is paused
 	if pool.Paused {
 		return &types.QueryCanProposeResponse{
@@ -40,6 +56,13 @@ func (k Keeper) CanPropose(goCtx context.Context, req *types.QueryCanProposeRequ
 		}, nil
 	}
 
+	if pool.BundleProposal.BundleId == types.NO_DATA_BUNDLE && pool.BundleProposal.Uploader == req.Proposer {
+		return &types.QueryCanProposeResponse{
+			Possible: true,
+			Reason:   "RESUBMIT_ARWEAVE_BUNDLE",
+		}, nil
+	}
+
 	// Check if upload interval has been surpassed
 	if uint64(ctx.BlockTime().Unix()) < (pool.BundleProposal.CreatedAt + pool.UploadInterval) {
 		return &types.QueryCanProposeResponse{
@@ -53,22 +76,6 @@ func (k Keeper) CanPropose(goCtx context.Context, req *types.QueryCanProposeRequ
 		return &types.QueryCanProposeResponse{
 			Possible: false,
 			Reason:   "Not designated uploader",
-		}, nil
-	}
-
-	// Check if pool has funds
-	if pool.TotalFunds == 0 {
-		return &types.QueryCanProposeResponse{
-			Possible: false,
-			Reason:   "Pool has run out of funds",
-		}, nil
-	}
-
-	// Check if enough nodes are online
-	if len(pool.Stakers) < 2 {
-		return &types.QueryCanProposeResponse{
-			Possible: false,
-			Reason:   "Not enough nodes online",
 		}, nil
 	}
 

@@ -11,8 +11,6 @@ import (
 )
 
 // AccountStakedList returns all pools (with additional data) a user has staked into.
-// Also returns the amount and unbonding amount
-// Supports Pagination
 func (k Keeper) AccountStakedList(goCtx context.Context, req *types.QueryAccountStakedListRequest) (*types.QueryAccountStakedListResponse, error) {
 	if req == nil {
 		return nil, status.Error(codes.InvalidArgument, "invalid request")
@@ -38,12 +36,11 @@ func (k Keeper) AccountStakedList(goCtx context.Context, req *types.QueryAccount
 			pool, _ := k.GetPool(ctx, staker.PoolId)
 
 			staked = append(staked, types.Staked{
-				Staker:          staker.Account,
-				PoolId:          staker.PoolId,
-				Account:         staker.Account,
-				Amount:          staker.Amount,
-				UnbondingAmount: staker.UnbondingAmount,
-				Pool:            &pool,
+				Staker:  staker.Account,
+				PoolId:  staker.PoolId,
+				Account: staker.Account,
+				Amount:  staker.Amount,
+				Pool:    &pool,
 			})
 		}
 

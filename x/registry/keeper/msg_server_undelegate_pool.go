@@ -28,7 +28,6 @@ func (k msgServer) UndelegatePool(
 	}
 
 	// Check if the sender is trying to undelegate more than they have delegated.
-	// NOTE: Any amount that is still unbonding, is still pending, and so hasn't been removed from delegation.
 	if msg.Amount > delegator.DelegationAmount {
 		return nil, sdkErrors.Wrapf(sdkErrors.ErrInsufficientFunds, types.ErrNotEnoughDelegation.Error(), msg.Amount)
 	}
@@ -45,20 +44,19 @@ func (k msgServer) UndelegatePool(
 	// Withdraw all rewards for the sender.
 	reward := f1Distribution.Withdraw()
 
+	// Update state variables (or completely remove if fully undelegating).
+	if delegator.DelegationAmount == msg.Amount {
+		k.RemoveDelegator(ctx, msg.Id, delegator.Staker, delegator.Delegator)
+	} else {
+		delegator.DelegationAmount -= msg.Amount
+		k.SetDelegator(ctx, delegator)
+	}
+
 	// Transfer tokens from this module to sender.
-	err := k.transferToAddress(ctx, msg.Creator, reward)
+	err := k.TransferToAddress(ctx, msg.Creator, msg.Amount+reward)
 	if err != nil {
 		return nil, err
 	}
-
-	// Perform an internal re-delegation.
-	undelegatedAmount := f1Distribution.Undelegate()
-	redelegation := undelegatedAmount - msg.Amount
-	f1Distribution.Delegate(redelegation)
-
-	// Start the unbonding process.
-	unbond := Unbond{k.Keeper, ctx}
-	unbond.StartUnbond(pool.Id, msg.Staker, msg.Creator, msg.Amount)
 
 	// Event an undelegate event.
 	types.EmitUndelegateEvent(ctx, pool.Id, delegator.Delegator, msg.Staker, msg.Amount)

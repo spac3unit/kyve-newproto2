@@ -170,25 +170,25 @@ func getDelegationWeight(delegation uint64) uint64 {
 }
 
 // getNextUploaderByRandom is an internal function that randomly selects the next uploader for a given pool.
-func (k Keeper) getNextUploaderByRandom(ctx sdk.Context, pool *types.Pool, excludeNextUploader bool) (nextUploader string) {
-	var candidates []RandomChoiceCandidate
+func (k Keeper) getNextUploaderByRandom(ctx sdk.Context, pool *types.Pool, candidates []string) (nextUploader string) {
+	var _candidates []RandomChoiceCandidate
 
-	for _, s := range pool.Stakers {
+	if len(candidates) == 0 {
+		return ""
+	}
+
+	for _, s := range candidates {
 		staker, foundStaker := k.GetStaker(ctx, s, pool.Id)
 		delegation, foundDelegation := k.GetDelegationPoolData(ctx, pool.Id, s)
 
-		if excludeNextUploader && staker.Account == pool.BundleProposal.NextUploader {
-			continue
-		}
-
 		if foundStaker {
 			if foundDelegation {
-				candidates = append(candidates, RandomChoiceCandidate{
+				_candidates = append(_candidates, RandomChoiceCandidate{
 					Account: s,
 					Amount:  staker.Amount + getDelegationWeight(delegation.TotalDelegation),
 				})
 			} else {
-				candidates = append(candidates, RandomChoiceCandidate{
+				_candidates = append(_candidates, RandomChoiceCandidate{
 					Account: s,
 					Amount:  staker.Amount,
 				})
@@ -196,11 +196,7 @@ func (k Keeper) getNextUploaderByRandom(ctx sdk.Context, pool *types.Pool, exclu
 		}
 	}
 
-	if len(candidates) == 0 {
-		return pool.BundleProposal.NextUploader
-	}
-
-	return k.getWeightedRandomChoice(candidates, uint64(ctx.BlockHeight()+ctx.BlockTime().Unix()))
+	return k.getWeightedRandomChoice(_candidates, uint64(ctx.BlockHeight()+ctx.BlockTime().Unix()))
 }
 
 // slashStaker is an internal function that slashes a staker in a given pool by a certain percentage.

@@ -24,10 +24,9 @@ func (k Keeper) StakeInfo(goCtx context.Context, req *types.QueryStakeInfoReques
 
 	// Create empty response, as the query shall return the default values if a specific entry does not exist
 	response := types.QueryStakeInfoResponse{
-		Balance:          "0",
-		CurrentStake:     "0",
-		MinimumStake:     "0",
-		CurrentUnbonding: "0",
+		Balance:      "0",
+		CurrentStake: "0",
+		MinimumStake: "0",
 	}
 
 	// Query balance
@@ -43,7 +42,6 @@ func (k Keeper) StakeInfo(goCtx context.Context, req *types.QueryStakeInfoReques
 	staker, exists := k.GetStaker(ctx, req.Staker, req.PoolId)
 	if exists {
 		response.CurrentStake = strconv.FormatUint(staker.Amount, 10)
-		response.CurrentUnbonding = strconv.FormatUint(staker.UnbondingAmount, 10)
 	}
 
 	// Fetch pool

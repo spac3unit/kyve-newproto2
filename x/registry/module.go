@@ -176,14 +176,5 @@ func (am AppModule) BeginBlock(_ sdk.Context, _ abci.RequestBeginBlock) {}
 func (am AppModule) EndBlock(ctx sdk.Context, _ abci.RequestEndBlock) []abci.ValidatorUpdate {
 	am.keeper.HandleUploadTimeout(sdk.WrapSDKContext(ctx))
 
-	unbound := keeper.Unbond{
-		K:   am.keeper,
-		Ctx: ctx,
-	}
-	_, err := unbound.CheckAndPerformUndelegation()
-	if err != nil {
-		return nil
-	}
-
 	return []abci.ValidatorUpdate{}
 }

@@ -36,12 +36,11 @@ func (k msgServer) DefundPool(goCtx context.Context, msg *types.MsgDefundPool) (
 		k.removeFunder(ctx, &pool, &funder)
 	} else {
 		funder.Amount -= msg.Amount
-		pool.TotalFunds -= msg.Amount
 		k.SetFunder(ctx, funder)
 	}
 
 	// Transfer tokens from this module to sender.
-	err := k.transferToAddress(ctx, msg.Creator, msg.Amount)
+	err := k.TransferToAddress(ctx, msg.Creator, msg.Amount)
 	if err != nil {
 		return nil, err
 	}
@@ -50,6 +49,7 @@ func (k msgServer) DefundPool(goCtx context.Context, msg *types.MsgDefundPool) (
 	types.EmitDefundPoolEvent(ctx, msg.Id, msg.Creator, msg.Amount)
 
 	// Update and return.
+	pool.TotalFunds -= msg.Amount
 	k.updateLowestFunder(ctx, &pool)
 	k.SetPool(ctx, pool)
 

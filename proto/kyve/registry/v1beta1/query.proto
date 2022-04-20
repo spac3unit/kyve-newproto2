@@ -97,11 +97,6 @@ service Query {
     option (google.api.http).get = "/kyve/registry/v1beta1/account_delegation_list/{address}";
   }
 
-  // AccountUnbondings ...
-  rpc AccountUnbondings(QueryAccountUnbondingsRequest) returns (QueryAccountUnbondingsResponse) {
-    option (google.api.http).get = "/kyve/registry/v1beta1/account_unbondings/{address}";
-  }
-
   // DELEGATION
 
   // DelegatorsByPoolAndStaker ...
@@ -194,18 +189,16 @@ message StakerResponse {
   string account = 3;
   // amount ...
   uint64 amount = 4;
-  // unbonding_amount ...
-  uint64 unbonding_amount = 5;
   // total_delegation ...
-  uint64 total_delegation = 6;
+  uint64 total_delegation = 5;
   // commission ...
-  string commission = 7;
+  string commission = 6;
   // moniker ...
-  string moniker = 8;
+  string moniker = 7;
   // website ...
-  string website = 9;
+  string website = 8;
   // logo
-  string logo = 10;
+  string logo = 9;
 }
 
 // WARP
@@ -304,8 +297,6 @@ message QueryStakeInfoResponse {
   string current_stake = 2;
   // minimum_stake ...
   string minimum_stake = 3;
-  // current_unbonding ...
-  string current_unbonding = 4;
 }
 
 // STATS FOR USER ACCOUNT
@@ -324,10 +315,6 @@ message QueryAccountAssetsResponse {
   uint64 protocol_staking = 2;
   // protocol_delegation ...
   uint64 protocol_delegation = 3;
-  // protocol_staking_unbonding ...
-  uint64 protocol_staking_unbonding = 4;
-  // protocol_staking_unbonding ...
-  uint64 protocol_delegation_unbonding = 5;
   // protocol_rewards ...
   uint64 protocol_rewards = 6;
   // protocol_funding ...
@@ -386,8 +373,6 @@ message Staked {
   string account = 3;
   // amount ...
   uint64 amount = 4;
-  // unbonding_amount
-  uint64 unbonding_amount = 5;
   // pool ...
   kyve.registry.v1beta1.Pool pool = 6;
 }
@@ -494,20 +479,4 @@ message DelegationForStakerResponse {
   uint64 total_delegation_amount = 4;
   // delegator_count ...
   uint64 delegator_count = 5;
-}
-
-// QueryUnbondingEntriesByDelegatorRequest ...
-message QueryAccountUnbondingsRequest {
-  // pagination defines an optional pagination for the request.
-  cosmos.base.query.v1beta1.PageRequest pagination = 1;
-  // delegator ...
-  string address = 2;
-}
-
-// QueryUnbondingEntriesByDelegatorResponse ...
-message QueryAccountUnbondingsResponse {
-  // unbonding_entries ...
-  repeated kyve.registry.v1beta1.UnbondingEntries unbonding_entries = 1 [(gogoproto.nullable) = false];
-  // pagination defines the pagination in the response.
-  cosmos.base.query.v1beta1.PageResponse pagination = 2;
 }

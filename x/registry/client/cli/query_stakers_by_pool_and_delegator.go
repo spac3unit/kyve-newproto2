@@ -24,7 +24,7 @@ func CmdStakersByPoolAndDelegator() *cobra.Command {
 			}
 			reqDelegator := args[1]
 
-			clientCtx, err := client.GetClientTxContext(cmd)
+			clientCtx, err := client.GetClientQueryContext(cmd)
 			if err != nil {
 				return err
 			}

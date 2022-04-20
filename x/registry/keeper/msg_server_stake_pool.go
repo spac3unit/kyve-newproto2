@@ -33,7 +33,7 @@ func (k msgServer) StakePool(goCtx context.Context, msg *types.MsgStakePool) (*t
 
 			if msg.Amount > lowestStaker.Amount {
 				// Transfer tokens from this module to the lowest staker.
-				err := k.transferToAddress(ctx, lowestStaker.Account, lowestStaker.Amount)
+				err := k.TransferToAddress(ctx, lowestStaker.Account, lowestStaker.Amount)
 				if err != nil {
 					return nil, err
 				}

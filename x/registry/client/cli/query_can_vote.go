@@ -25,7 +25,7 @@ func CmdCanVote() *cobra.Command {
 			reqBundleId := args[1]
 			reqVoter := args[2]
 
-			clientCtx, err := client.GetClientTxContext(cmd)
+			clientCtx, err := client.GetClientQueryContext(cmd)
 			if err != nil {
 				return err
 			}

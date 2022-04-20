@@ -33,7 +33,7 @@ func (k msgServer) FundPool(goCtx context.Context, msg *types.MsgFundPool) (*typ
 
 			if msg.Amount > lowestFunder.Amount {
 				// Transfer tokens from this module to the lowest funder.
-				err := k.transferToAddress(ctx, lowestFunder.Account, lowestFunder.Amount)
+				err := k.TransferToAddress(ctx, lowestFunder.Account, lowestFunder.Amount)
 				if err != nil {
 					return nil, err
 				}

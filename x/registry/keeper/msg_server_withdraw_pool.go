@@ -40,7 +40,7 @@ func (k msgServer) WithdrawPool(
 	reward := f1Distribution.Withdraw()
 
 	// Transfer tokens from this module to sender.
-	err := k.transferToAddress(ctx, msg.Creator, reward)
+	err := k.TransferToAddress(ctx, msg.Creator, reward)
 	if err != nil {
 		return nil, err
 	}

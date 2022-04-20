@@ -21,9 +21,9 @@ func (k msgServer) SubmitBundleProposal(
 		return nil, sdkErrors.Wrapf(sdkErrors.ErrNotFound, types.ErrPoolNotFound.Error(), msg.Id)
 	}
 
-	// Error if the pool is paused.
-	if pool.Paused {
-		return nil, sdkErrors.Wrap(sdkErrors.ErrUnauthorized, types.ErrPoolPaused.Error())
+	// Check if enough nodes are online
+	if len(pool.Stakers) < 2 {
+		return nil, types.ErrNotEnoughNodesOnline
 	}
 
 	// Error if the pool has no funds.
@@ -31,10 +31,48 @@ func (k msgServer) SubmitBundleProposal(
 		return nil, sdkErrors.Wrap(sdkErrors.ErrInsufficientFunds, types.ErrFundsTooLow.Error())
 	}
 
+	// Error if the pool is paused.
+	if pool.Paused {
+		return nil, sdkErrors.Wrap(sdkErrors.ErrUnauthorized, types.ErrPoolPaused.Error())
+	}
+
 	// Check if the sender is a protocol node (aka has staked into this pool).
 	_, isStaker := k.GetStaker(ctx, msg.Creator, msg.Id)
 	if !isStaker {
 		return nil, sdkErrors.Wrap(sdkErrors.ErrUnauthorized, types.ErrNoStaker.Error())
+	}
+
+	// Validate bundle id.
+	if msg.BundleId == "" {
+		return nil, types.ErrInvalidArgs
+	}
+
+	// resubmit NO_DATA_BUNDLE
+	if pool.BundleProposal.BundleId == types.NO_DATA_BUNDLE && pool.BundleProposal.Uploader == msg.Creator {
+		// Check if bundle id is an ARWEAVE_BUNDLE
+		if msg.BundleId == types.NO_QUORUM_BUNDLE || msg.BundleId == types.NO_DATA_BUNDLE {
+			return nil, types.ErrInvalidArgs
+		}
+
+		// Validate bundle args
+		if msg.BundleSize == 0 || msg.ByteSize == 0 {
+			return nil, types.ErrInvalidArgs
+		}
+
+		// resubmit ARWEAVE_BUNDLE
+		pool.BundleProposal = &types.BundleProposal{
+			Uploader:     pool.BundleProposal.Uploader,
+			NextUploader: pool.BundleProposal.NextUploader,
+			BundleId:     msg.BundleId,
+			ByteSize:     msg.ByteSize,
+			FromHeight:   pool.BundleProposal.ToHeight,
+			ToHeight:     pool.BundleProposal.ToHeight + msg.BundleSize,
+			CreatedAt:    uint64(ctx.BlockTime().Unix()),
+		}
+
+		k.SetPool(ctx, pool)
+
+		return &types.MsgSubmitBundleProposalResponse{}, nil
 	}
 
 	// Check if upload_interval has been surpassed
@@ -45,16 +83,6 @@ func (k msgServer) SubmitBundleProposal(
 	// Check if the sender is the designated uploader.
 	if pool.BundleProposal.NextUploader != msg.Creator {
 		return nil, types.ErrNotDesignatedUploader
-	}
-
-	// Validate bundle id.
-	if msg.BundleId == "" {
-		return nil, types.ErrInvalidArgs
-	}
-
-	// Check if enough nodes are online
-	if len(pool.Stakers) < 2 {
-		return nil, types.ErrNotEnoughNodesOnline
 	}
 
 	// Check if consensus has already been reached.
@@ -92,21 +120,18 @@ func (k msgServer) SubmitBundleProposal(
 
 			// keep the BundleProposal
 			// just replace the nextUploader and the createdAt time.
-			pool.BundleProposal.NextUploader = k.getNextUploaderByRandom(ctx, &pool, true)
 			pool.BundleProposal.CreatedAt = uint64(ctx.BlockTime().Unix())
-
+			// select next_uploader from voters and uploader
+			pool.BundleProposal.NextUploader = k.getNextUploaderByRandom(ctx, &pool, pool.Stakers)
 		} else {
 			// If consensus wasn't reached, we drop the bundle and emit an event.
 			types.EmitBundleDroppedQuorumNotReachedEvent(ctx, &pool)
 
 			pool.BundleProposal = &types.BundleProposal{
-				NextUploader: k.getNextUploaderByRandom(ctx, &pool, false),
+				NextUploader: k.getNextUploaderByRandom(ctx, &pool, pool.Stakers),
 				FromHeight:   pool.BundleProposal.FromHeight,
-				// Reset ToHeight also to fromHeight as uploader needs to fetch the block again.
-				ToHeight:  pool.BundleProposal.FromHeight,
-				CreatedAt: uint64(ctx.BlockTime().Unix()),
-				// Set empty bundle id to indicate dropped bundle
-				BundleId: "",
+				ToHeight:     pool.BundleProposal.FromHeight,
+				CreatedAt:    uint64(ctx.BlockTime().Unix()),
 			}
 		}
 
@@ -127,7 +152,7 @@ func (k msgServer) SubmitBundleProposal(
 	if pool.BundleProposal.BundleId == "" {
 		pool.BundleProposal = &types.BundleProposal{
 			Uploader:     msg.Creator,
-			NextUploader: k.getNextUploaderByRandom(ctx, &pool, false),
+			NextUploader: k.getNextUploaderByRandom(ctx, &pool, pool.Stakers),
 			BundleId:     msg.BundleId,
 			ByteSize:     msg.ByteSize,
 			FromHeight:   pool.BundleProposal.ToHeight,
@@ -253,10 +278,13 @@ func (k msgServer) SubmitBundleProposal(
 		// Subtract bundle reward from the pool's total funds.
 		pool.TotalFunds -= bundleReward
 
-		// Partially slash all nodes who voted incorrectly.
-		for _, voter := range pool.BundleProposal.VotersInvalid {
-			slashAmount := k.slashStaker(ctx, &pool, voter, k.VoteSlash(ctx))
-			types.EmitSlashEvent(ctx, pool.Id, voter, slashAmount)
+		// Only slash with vote slash if bundle is of type ARWEAVE_BUNDLE
+		if pool.BundleProposal.BundleId != types.NO_DATA_BUNDLE {
+			// Partially slash all nodes who voted incorrectly.
+			for _, voter := range pool.BundleProposal.VotersInvalid {
+				slashAmount := k.slashStaker(ctx, &pool, voter, k.VoteSlash(ctx))
+				types.EmitSlashEvent(ctx, pool.Id, voter, slashAmount)
+			}
 		}
 
 		// Send payout to treasury.
@@ -266,7 +294,7 @@ func (k msgServer) SubmitBundleProposal(
 		}
 
 		// Send payout to uploader.
-		errTransfer := k.transferToAddress(ctx, pool.BundleProposal.Uploader, uploaderPayout)
+		errTransfer := k.TransferToAddress(ctx, pool.BundleProposal.Uploader, uploaderPayout)
 		if errTransfer != nil {
 			return nil, errTransfer
 		}
@@ -295,7 +323,7 @@ func (k msgServer) SubmitBundleProposal(
 		// Set submitted bundle as new bundle proposal and select new next_uploader
 		pool.BundleProposal = &types.BundleProposal{
 			Uploader:     msg.Creator,
-			NextUploader: k.getNextUploaderByRandom(ctx, &pool, false),
+			NextUploader: k.getNextUploaderByRandom(ctx, &pool, pool.Stakers),
 			BundleId:     msg.BundleId,
 			ByteSize:     msg.ByteSize,
 			FromHeight:   pool.BundleProposal.ToHeight,
@@ -307,14 +335,27 @@ func (k msgServer) SubmitBundleProposal(
 
 		return &types.MsgSubmitBundleProposalResponse{}, nil
 	} else if invalid {
-		// Partially slash all nodes who voted incorrectly.
-		for _, voter := range pool.BundleProposal.VotersValid {
-			slashAmount := k.slashStaker(ctx, &pool, voter, k.VoteSlash(ctx))
-			types.EmitSlashEvent(ctx, pool.Id, voter, slashAmount)
+		// Only slash with vote slash if bundle is of type ARWEAVE_BUNDLE
+		if pool.BundleProposal.BundleId != types.NO_DATA_BUNDLE {
+			// Partially slash all nodes who voted incorrectly.
+			for _, voter := range pool.BundleProposal.VotersValid {
+				slashAmount := k.slashStaker(ctx, &pool, voter, k.VoteSlash(ctx))
+				types.EmitSlashEvent(ctx, pool.Id, voter, slashAmount)
+			}
 		}
 
+		var slashAmount uint64
+
 		// Partially slash the uploader.
-		slashAmount := k.slashStaker(ctx, &pool, pool.BundleProposal.Uploader, k.UploadSlash(ctx))
+		if pool.BundleProposal.BundleId == types.NO_DATA_BUNDLE {
+			// Slash uploader with timeout slash if bundle was of type NO_DATA_BUNDLE
+			slashAmount = k.slashStaker(ctx, &pool, pool.BundleProposal.Uploader, k.TimeoutSlash(ctx))
+		} else {
+			// Slash uploader with upload slash if bundle was of type ARWEAVE_BUNDLE
+			slashAmount = k.slashStaker(ctx, &pool, pool.BundleProposal.Uploader, k.UploadSlash(ctx))
+		}
+
+		// emit slash event
 		types.EmitSlashEvent(ctx, pool.Id, pool.BundleProposal.Uploader, slashAmount)
 
 		// Update the current lowest staker.

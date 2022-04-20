@@ -12,7 +12,7 @@ import (
 )
 
 // AccountAssets returns an overview of the balances of the given user regarding the protocol nodes
-// This includes the current balance, current staking, delegation, funding and unbondings.
+// This includes the current balance, funding, staking, and delegation.
 // Supports Pagination
 func (k Keeper) AccountAssets(goCtx context.Context, req *types.QueryAccountAssetsRequest) (*types.QueryAccountAssetsResponse, error) {
 	if req == nil {
@@ -22,13 +22,11 @@ func (k Keeper) AccountAssets(goCtx context.Context, req *types.QueryAccountAsse
 	ctx := sdk.UnwrapSDKContext(goCtx)
 
 	response := types.QueryAccountAssetsResponse{
-		Balance:                     0,
-		ProtocolStaking:             0,
-		ProtocolDelegation:          0,
-		ProtocolStakingUnbonding:    0,
-		ProtocolDelegationUnbonding: 0,
-		ProtocolRewards:             0,
-		ProtocolFunding:             0,
+		Balance:            0,
+		ProtocolStaking:    0,
+		ProtocolDelegation: 0,
+		ProtocolRewards:    0,
+		ProtocolFunding:    0,
 	}
 
 	// Fetch account balance
@@ -79,24 +77,7 @@ func (k Keeper) AccountAssets(goCtx context.Context, req *types.QueryAccountAsse
 		k.cdc.MustUnmarshal(stakerIterator.Value(), &val)
 
 		response.ProtocolStaking += val.Amount
-		response.ProtocolStakingUnbonding += val.UnbondingAmount
 	}
-
-	// Iterate all Unbonding entries indexed by user to fetch current unbondings
-	unbondingStore := prefix.NewStore(ctx.KVStore(k.storeKey), types.KeyPrefix(types.UnbondingEntriesKeyPrefixByDelegator))
-	unbondingIterator := sdk.KVStorePrefixIterator(unbondingStore, []byte(req.Address))
-
-	defer unbondingIterator.Close()
-
-	for ; unbondingIterator.Valid(); unbondingIterator.Next() {
-		var val types.UnbondingEntries
-		k.cdc.MustUnmarshal(unbondingIterator.Value(), &val)
-
-		response.ProtocolDelegationUnbonding += val.Amount
-	}
-
-	// Correct value as the unbonding Iterator contains both types of unbonding
-	response.ProtocolDelegationUnbonding -= response.ProtocolStakingUnbonding
 
 	// Iterate all funding entries
 	funderStore := prefix.NewStore(ctx.KVStore(k.storeKey), types.KeyPrefix(types.FunderKeyPrefix))

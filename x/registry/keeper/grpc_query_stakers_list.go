@@ -36,7 +36,6 @@ func (k Keeper) StakersList(goCtx context.Context, req *types.QueryStakersListRe
 			PoolId:          staker.PoolId,
 			Account:         staker.Account,
 			Amount:          staker.Amount,
-			UnbondingAmount: staker.UnbondingAmount,
 			TotalDelegation: 0,
 			Commission:      staker.Commission,
 			Moniker:         staker.Moniker,

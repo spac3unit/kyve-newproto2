@@ -20,7 +20,7 @@ service Msg {
   // UnstakePool ...
   rpc UnstakePool(MsgUnstakePool) returns (MsgUnstakePoolResponse);
 
-  // DELEGATION - with unbonding and reward collection
+  // DELEGATION
 
   // DelegatePool ...
   rpc DelegatePool(MsgDelegatePool) returns (MsgDelegatePoolResponse);

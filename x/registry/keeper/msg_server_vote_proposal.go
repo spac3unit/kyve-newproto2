@@ -52,6 +52,7 @@ func (k msgServer) VoteProposal(
 			hasVotedValid = true
 		}
 	}
+	
 	for _, voter := range pool.BundleProposal.VotersInvalid {
 		if voter == msg.Creator {
 			hasVotedInvalid = true

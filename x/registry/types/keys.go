@@ -26,7 +26,6 @@ const (
 	MaxFunders        = 50 // maximum amount of funders which are allowed
 	MaxStakers        = 50 // maximum amount of stakers which are allowed
 	DefaultCommission = "0.9"
-	UnbondingTime     = 60 * 60 * 24 * 1
 	NO_DATA_BUNDLE    = "NO_DATA_BUNDLE"
 	NO_QUORUM_BUNDLE  = "NO_QUORUM_BUNDLE"
 )

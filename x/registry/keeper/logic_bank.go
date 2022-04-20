@@ -5,8 +5,8 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
-// transferToAddress sends tokens from this module to a specified address.
-func (k Keeper) transferToAddress(ctx sdk.Context, address string, amount uint64) error {
+// TransferToAddress sends tokens from this module to a specified address.
+func (k Keeper) TransferToAddress(ctx sdk.Context, address string, amount uint64) error {
 	recipient, _ := sdk.AccAddressFromBech32(address)
 	coins := sdk.NewCoins(sdk.NewInt64Coin("tkyve", int64(amount)))
 
