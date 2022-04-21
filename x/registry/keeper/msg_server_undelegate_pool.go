@@ -44,18 +44,21 @@ func (k msgServer) UndelegatePool(
 	// Withdraw all rewards for the sender.
 	reward := f1Distribution.Withdraw()
 
-	// Update state variables (or completely remove if fully undelegating).
-	if delegator.DelegationAmount == msg.Amount {
-		k.RemoveDelegator(ctx, msg.Id, delegator.Staker, delegator.Delegator)
-	} else {
-		delegator.DelegationAmount -= msg.Amount
-		k.SetDelegator(ctx, delegator)
-	}
-
 	// Transfer tokens from this module to sender.
-	err := k.TransferToAddress(ctx, msg.Creator, msg.Amount+reward)
+	err := k.TransferToAddress(ctx, msg.Creator, reward)
 	if err != nil {
 		return nil, err
+	}
+
+	// Perform an internal re-delegation.
+	undelegatedAmount := f1Distribution.Undelegate()
+	redelegation := undelegatedAmount - msg.Amount
+	f1Distribution.Delegate(redelegation)
+
+	// Transfer the money
+	err = k.TransferToAddress(ctx, msg.Creator, msg.Amount)
+	if err != nil {
+		k.PanicHalt(ctx, "Not enough money in module: "+err.Error())
 	}
 
 	// Event an undelegate event.

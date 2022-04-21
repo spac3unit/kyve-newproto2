@@ -41,13 +41,17 @@ func (k msgServer) DelegatePool(
 	if delegatorExists {
 		// If the sender is already a delegator, first perform an undelegation, before then delegating.
 		reward := f1Distribution.Withdraw()
+		err := k.TransferToAddress(ctx, msg.Creator, reward)
+		if err != nil {
+			return nil, err
+		}
+
+		// Perform redelegation
 		unDelegateAmount := f1Distribution.Undelegate()
 		f1Distribution.Delegate(unDelegateAmount + msg.Amount)
 
 		// Transfer tokens from sender to this module.
-		amountToTransfer := unDelegateAmount + msg.Amount - reward
-
-		err := k.transferToRegistry(ctx, msg.Creator, amountToTransfer)
+		err = k.transferToRegistry(ctx, msg.Creator, msg.Amount)
 		if err != nil {
 			return nil, err
 		}

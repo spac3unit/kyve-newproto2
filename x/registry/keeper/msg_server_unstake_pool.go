@@ -62,6 +62,7 @@ func (k msgServer) UnstakePool(
 		k.removeStaker(ctx, &pool, &staker)
 	} else {
 		staker.Amount -= msg.Amount
+		pool.TotalStake -= msg.Amount
 		k.SetStaker(ctx, staker)
 	}
 
@@ -75,7 +76,6 @@ func (k msgServer) UnstakePool(
 	types.EmitUnstakeEvent(ctx, msg.Id, msg.Creator, msg.Amount)
 
 	// Update and return.
-	pool.TotalStake -= msg.Amount
 	k.updateLowestStaker(ctx, &pool)
 	k.SetPool(ctx, pool)
 

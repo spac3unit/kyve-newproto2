@@ -36,6 +36,7 @@ func (k msgServer) DefundPool(goCtx context.Context, msg *types.MsgDefundPool) (
 		k.removeFunder(ctx, &pool, &funder)
 	} else {
 		funder.Amount -= msg.Amount
+		pool.TotalFunds -= msg.Amount
 		k.SetFunder(ctx, funder)
 	}
 
@@ -49,7 +50,6 @@ func (k msgServer) DefundPool(goCtx context.Context, msg *types.MsgDefundPool) (
 	types.EmitDefundPoolEvent(ctx, msg.Id, msg.Creator, msg.Amount)
 
 	// Update and return.
-	pool.TotalFunds -= msg.Amount
 	k.updateLowestFunder(ctx, &pool)
 	k.SetPool(ctx, pool)
 
