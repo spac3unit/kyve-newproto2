@@ -2,6 +2,7 @@ package keeper
 
 import (
 	"context"
+	"strings"
 
 	"github.com/KYVENetwork/chain/x/registry/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -21,31 +22,53 @@ func (k msgServer) VoteProposal(
 		return nil, sdkErrors.Wrapf(sdkErrors.ErrNotFound, types.ErrPoolNotFound.Error(), msg.Id)
 	}
 
+	// Check if enough nodes are online
+	if len(pool.Stakers) < 2 {
+		return nil, types.ErrNotEnoughNodesOnline
+	}
+
+	// Error if the pool has no funds.
+	if len(pool.Funders) == 0 {
+		return nil, sdkErrors.Wrap(sdkErrors.ErrInsufficientFunds, types.ErrFundsTooLow.Error())
+	}
+
 	// Error if the pool is paused.
 	if pool.Paused {
 		return nil, sdkErrors.Wrap(sdkErrors.ErrUnauthorized, types.ErrPoolPaused.Error())
 	}
 
+	// Error if the pool is upgrading.
+	if pool.UpgradePlan.ScheduledAt > 0 && uint64(ctx.BlockTime().Unix()) >= pool.UpgradePlan.ScheduledAt {
+		return nil, sdkErrors.Wrap(sdkErrors.ErrUnauthorized, types.ErrPoolCurrentlyUpgrading.Error())
+	}
+
 	// Check if the sender is a protocol node (aka has staked into this pool).
-	_, isStaker := k.GetStaker(ctx, msg.Creator, msg.Id)
+	staker, isStaker := k.GetStaker(ctx, msg.Creator, msg.Id)
 	if !isStaker {
 		return nil, sdkErrors.Wrap(sdkErrors.ErrUnauthorized, types.ErrNoStaker.Error())
 	}
 
 	// Check if the sender is also the bundle's uploader.
-	if pool.BundleProposal.GetUploader() == msg.Creator {
+	if pool.BundleProposal.Uploader == msg.Creator {
 		return nil, sdkErrors.Wrap(sdkErrors.ErrUnauthorized, types.ErrVoterIsUploader.Error())
 	}
 
-	// Check if the sender is voting on a valid bundle.
-	if msg.BundleId == "" || msg.BundleId != pool.BundleProposal.BundleId {
+	// Check if bundle is not dropped or NO_DATA_BUNDLE
+	if pool.BundleProposal.BundleId == "" || strings.HasPrefix(pool.BundleProposal.BundleId, types.KYVE_NO_DATA_BUNDLE) {
+		return nil, sdkErrors.Wrapf(
+			sdkErrors.ErrNotFound, types.ErrInvalidBundleId.Error(), pool.BundleProposal.BundleId,
+		)
+	}
+
+	// Check if the sender is voting on the same bundle.
+	if msg.BundleId != pool.BundleProposal.BundleId {
 		return nil, sdkErrors.Wrapf(
 			sdkErrors.ErrNotFound, types.ErrInvalidBundleId.Error(), pool.BundleProposal.BundleId,
 		)
 	}
 
 	// Check if the sender has already voted on the bundle.
-	hasVotedValid, hasVotedInvalid := false, false
+	hasVotedValid, hasVotedInvalid, hasVotedAbstain := false, false, false
 
 	for _, voter := range pool.BundleProposal.VotersValid {
 		if voter == msg.Creator {
@@ -59,21 +82,43 @@ func (k msgServer) VoteProposal(
 		}
 	}
 
+	for _, voter := range pool.BundleProposal.VotersAbstain {
+		if voter == msg.Creator {
+			hasVotedAbstain = true
+		}
+	}
+
 	if hasVotedValid || hasVotedInvalid {
 		return nil, sdkErrors.Wrapf(
 			sdkErrors.ErrUnauthorized, types.ErrAlreadyVoted.Error(), pool.BundleProposal.BundleId,
 		)
 	}
 
-	// Emit a vote event.
-	types.EmitBundleVoteEvent(ctx, &pool, msg)
+	if hasVotedAbstain && msg.Vote == 2 {
+		return nil, sdkErrors.Wrapf(
+			sdkErrors.ErrUnauthorized, types.ErrAlreadyVoted.Error(), pool.BundleProposal.BundleId,
+		)
+	}
 
 	// Update and return.
-	if msg.Support {
+	if msg.Vote == 0 {
 		pool.BundleProposal.VotersValid = append(pool.BundleProposal.VotersValid, msg.Creator)
-	} else {
+	} else if msg.Vote == 1 {
 		pool.BundleProposal.VotersInvalid = append(pool.BundleProposal.VotersInvalid, msg.Creator)
+	} else if msg.Vote == 2 {
+		pool.BundleProposal.VotersAbstain = append(pool.BundleProposal.VotersAbstain, msg.Creator)
+	} else {
+		return nil, sdkErrors.Wrapf(
+			sdkErrors.ErrUnauthorized, types.ErrInvalidVote.Error(), msg.Vote,
+		)
 	}
+
+	// reset points
+	staker.Points = 0
+	k.SetStaker(ctx, staker)
+
+	// Emit a vote event.
+	types.EmitBundleVoteEvent(ctx, &pool, msg)
 
 	k.SetPool(ctx, pool)
 

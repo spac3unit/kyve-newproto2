@@ -38,10 +38,15 @@ var (
 	ErrNotEnoughNodesOnline   = sdkerrors.Register(ModuleName, 1115, "not enough nodes online")
 	ErrInvalidCommission   = sdkerrors.Register(ModuleName, 1116, "invalid commission %v")
 	ErrSelfDelegation   = sdkerrors.Register(ModuleName, 1117, "self delegation not allowed")
+	ErrFromHeight   = sdkerrors.Register(ModuleName, 1118, "invalid from height")
+	ErrInvalidVote   = sdkerrors.Register(ModuleName, 1119, "invalid vote %v")
+	ErrMaxBundleSize   = sdkerrors.Register(ModuleName, 1120, "bundle size is too high")
+	ErrPoolCurrentlyUpgrading   = sdkerrors.Register(ModuleName, 1121, "pool currently upgrading")
+	ErrPoolNoUpgradeScheduled   = sdkerrors.Register(ModuleName, 1122, "pool has no scheduled upgrade")
 )
 
 // delegation errors
 var (
-	ErrNotADelegator       = sdkerrors.Register(ModuleName, 1118, "not a delegator")
-	ErrNotEnoughDelegation = sdkerrors.Register(ModuleName, 1119, "undelegate-amount is larger than current delegation")
+	ErrNotADelegator       = sdkerrors.Register(ModuleName, 1123, "not a delegator")
+	ErrNotEnoughDelegation = sdkerrors.Register(ModuleName, 1124, "undelegate-amount is larger than current delegation")
 )

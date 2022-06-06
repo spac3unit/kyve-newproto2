@@ -17,7 +17,7 @@ func CmdSubmitBundleProposal() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "submit-bundle-proposal [id] [bundle-id] [byte-size] [bundle-size]",
 		Short: "Broadcast message submit-bundle-proposal",
-		Args:  cobra.ExactArgs(4),
+		Args:  cobra.ExactArgs(5),
 		RunE: func(cmd *cobra.Command, args []string) (err error) {
 			argId, err := cast.ToUint64E(args[0])
 			if err != nil {
@@ -28,7 +28,11 @@ func CmdSubmitBundleProposal() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			argBundleSize, err := cast.ToUint64E(args[3])
+			argFromHeight, err := cast.ToUint64E(args[3])
+			if err != nil {
+				return err
+			}
+			argBundleSize, err := cast.ToUint64E(args[4])
 			if err != nil {
 				return err
 			}
@@ -43,6 +47,7 @@ func CmdSubmitBundleProposal() *cobra.Command {
 				argId,
 				argBundleId,
 				argByteSize,
+				argFromHeight,
 				argBundleSize,
 			)
 			if err := msg.ValidateBasic(); err != nil {

@@ -3,6 +3,7 @@ package keeper
 import (
 	"github.com/KYVENetwork/chain/x/registry/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	paramtypes "github.com/cosmos/cosmos-sdk/x/params/types"
 )
 
 // GetParams get all parameters as types.Params
@@ -14,6 +15,7 @@ func (k Keeper) GetParams(ctx sdk.Context) types.Params {
 		k.UploadTimeout(ctx),
 		k.StorageCost(ctx),
 		k.NetworkFee(ctx),
+		k.MaxPoints(ctx),
 	)
 }
 
@@ -56,4 +58,15 @@ func (k Keeper) StorageCost(ctx sdk.Context) (res uint64) {
 func (k Keeper) NetworkFee(ctx sdk.Context) (res string) {
 	k.paramstore.Get(ctx, types.KeyNetworkFee, &res)
 	return
+}
+
+// MaxPoints returns the MaxPoints param
+func (k Keeper) MaxPoints(ctx sdk.Context) (res uint64) {
+	k.paramstore.Get(ctx, types.KeyMaxPoints, &res)
+	return
+}
+
+// MaxPoints returns the MaxPoints param
+func (k Keeper) ParamStore() (paramStore paramtypes.Subspace) {
+	return k.paramstore
 }

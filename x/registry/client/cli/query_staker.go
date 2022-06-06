@@ -12,21 +12,17 @@ import (
 
 var _ = strconv.Itoa(0)
 
-func CmdCanPropose() *cobra.Command {
+func CmdStaker() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "can-propose [id] [proposer]",
-		Short: "Query canPropose",
-		Args:  cobra.ExactArgs(3),
+		Use:   "staker [pool_id] [staker]",
+		Short: "Query staker",
+		Args:  cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) (err error) {
 			reqId, err := cast.ToUint64E(args[0])
 			if err != nil {
 				return err
 			}
-			reqProposer := args[1]
-			reqFromHeight, err := cast.ToUint64E(args[2])
-			if err != nil {
-				return err
-			}
+			reqStaker := args[1]
 
 			clientCtx, err := client.GetClientQueryContext(cmd)
 			if err != nil {
@@ -35,14 +31,13 @@ func CmdCanPropose() *cobra.Command {
 
 			queryClient := types.NewQueryClient(clientCtx)
 
-			params := &types.QueryCanProposeRequest{
+			params := &types.QueryStakerRequest{
 
-				PoolId:   reqId,
-				Proposer: reqProposer,
-				FromHeight: reqFromHeight,
+				PoolId: reqId,
+				Staker: reqStaker,
 			}
 
-			res, err := queryClient.CanPropose(cmd.Context(), params)
+			res, err := queryClient.Staker(cmd.Context(), params)
 			if err != nil {
 				return err
 			}

@@ -2,6 +2,7 @@ package keeper
 
 import (
 	"context"
+	"strings"
 
 	"github.com/KYVENetwork/chain/x/registry/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -23,11 +24,35 @@ func (k Keeper) CanVote(goCtx context.Context, req *types.QueryCanVoteRequest) (
 		return nil, sdkErrors.Wrapf(sdkErrors.ErrNotFound, types.ErrPoolNotFound.Error(), req.PoolId)
 	}
 
+	// Check if enough nodes are online
+	if len(pool.Stakers) < 2 {
+		return &types.QueryCanVoteResponse{
+			Possible: false,
+			Reason:   "Not enough nodes online",
+		}, nil
+	}
+
+	// Check if pool has funds
+	if pool.TotalFunds == 0 {
+		return &types.QueryCanVoteResponse{
+			Possible: false,
+			Reason:   "Pool has run out of funds",
+		}, nil
+	}
+
 	// Check if pool is paused
 	if pool.Paused {
 		return &types.QueryCanVoteResponse{
 			Possible: false,
 			Reason:   "Pool is paused",
+		}, nil
+	}
+
+	// Check if pool is upgrading
+	if pool.UpgradePlan.ScheduledAt > 0 && uint64(ctx.BlockTime().Unix()) >= pool.UpgradePlan.ScheduledAt {
+		return &types.QueryCanVoteResponse{
+			Possible: false,
+			Reason:   "Pool is upgrading",
 		}, nil
 	}
 
@@ -40,11 +65,19 @@ func (k Keeper) CanVote(goCtx context.Context, req *types.QueryCanVoteRequest) (
 		}, nil
 	}
 
-	// Check if empty bundle
+	// Check if dropped bundle
 	if pool.BundleProposal.BundleId == "" {
 		return &types.QueryCanVoteResponse{
 			Possible: false,
-			Reason:   "Can not vote on empty bundle",
+			Reason:   "Can not vote on dropped bundle",
+		}, nil
+	}
+
+	// Check if empty bundle
+	if strings.HasPrefix(pool.BundleProposal.BundleId, types.KYVE_NO_DATA_BUNDLE) {
+		return &types.QueryCanVoteResponse{
+			Possible: false,
+			Reason:   "Can not vote on NO_DATA_BUNDLE",
 		}, nil
 	}
 
@@ -56,8 +89,16 @@ func (k Keeper) CanVote(goCtx context.Context, req *types.QueryCanVoteRequest) (
 		}, nil
 	}
 
+	// check if voter is not uploader
+	if pool.BundleProposal.Uploader == req.Voter {
+		return &types.QueryCanVoteResponse{
+			Possible: false,
+			Reason:   "Voter is uploader",
+		}, nil
+	}
+
 	// Check if sender has not voted yet
-	hasVotedValid, hasVotedInvalid := false, false
+	hasVotedValid, hasVotedInvalid, hasVotedAbstain := false, false, false
 
 	for _, voter := range pool.BundleProposal.VotersValid {
 		if voter == req.Voter {
@@ -71,6 +112,12 @@ func (k Keeper) CanVote(goCtx context.Context, req *types.QueryCanVoteRequest) (
 		}
 	}
 
+	for _, voter := range pool.BundleProposal.VotersAbstain {
+		if voter == req.Voter {
+			hasVotedAbstain = true
+		}
+	}
+
 	if hasVotedValid || hasVotedInvalid {
 		return &types.QueryCanVoteResponse{
 			Possible: false,
@@ -78,11 +125,10 @@ func (k Keeper) CanVote(goCtx context.Context, req *types.QueryCanVoteRequest) (
 		}, nil
 	}
 
-	// check if voter is not uploader
-	if pool.BundleProposal.GetUploader() == req.Voter {
+	if hasVotedAbstain {
 		return &types.QueryCanVoteResponse{
-			Possible: false,
-			Reason:   "Voter is uploader",
+			Possible: true,
+			Reason:   "KYVE_VOTE_NO_ABSTAIN_ALLOWED",
 		}, nil
 	}
 

@@ -154,8 +154,10 @@ message MsgSubmitBundleProposal {
   string bundle_id = 3;
   // byte_size ...
   uint64 byte_size = 4;
+  // from_height
+  uint64 from_height = 5;
   // bundle_size ...
-  uint64 bundle_size = 5;
+  uint64 bundle_size = 6;
 }
 
 // MsgSubmitBundleProposalResponse defines the Msg/SubmitBundleProposal response type.
@@ -169,8 +171,8 @@ message MsgVoteProposal {
   uint64 id = 2;
   // bundle_id ...
   string bundle_id = 3;
-  // support ...
-  bool support = 4;
+  // vote ...
+  uint64 vote = 4;
 }
 
 // MsgVoteProposalResponse defines the Msg/VoteProposal response type.

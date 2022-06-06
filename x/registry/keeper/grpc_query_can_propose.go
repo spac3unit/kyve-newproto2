@@ -47,6 +47,14 @@ func (k Keeper) CanPropose(goCtx context.Context, req *types.QueryCanProposeRequ
 		}, nil
 	}
 
+	// Check if pool is upgrading
+	if pool.UpgradePlan.ScheduledAt > 0 && uint64(ctx.BlockTime().Unix()) >= pool.UpgradePlan.ScheduledAt {
+		return &types.QueryCanProposeResponse{
+			Possible: false,
+			Reason:   "Pool is upgrading",
+		}, nil
+	}
+
 	// Check if sender is a staker in pool
 	_, isStaker := k.GetStaker(ctx, req.Proposer, req.PoolId)
 	if !isStaker {
@@ -56,18 +64,11 @@ func (k Keeper) CanPropose(goCtx context.Context, req *types.QueryCanProposeRequ
 		}, nil
 	}
 
-	if pool.BundleProposal.BundleId == types.NO_DATA_BUNDLE && pool.BundleProposal.Uploader == req.Proposer {
-		return &types.QueryCanProposeResponse{
-			Possible: true,
-			Reason:   "RESUBMIT_ARWEAVE_BUNDLE",
-		}, nil
-	}
-
-	// Check if upload interval has been surpassed
-	if uint64(ctx.BlockTime().Unix()) < (pool.BundleProposal.CreatedAt + pool.UploadInterval) {
+	// Check if from_height matches
+	if pool.BundleProposal.ToHeight != req.FromHeight {
 		return &types.QueryCanProposeResponse{
 			Possible: false,
-			Reason:   "Upload interval not surpassed",
+			Reason:   "Invalid from_height",
 		}, nil
 	}
 
@@ -79,24 +80,12 @@ func (k Keeper) CanPropose(goCtx context.Context, req *types.QueryCanProposeRequ
 		}, nil
 	}
 
-	// Check if consensus has already been reached.
-	valid := false
-	invalid := false
-
-	if len(pool.Stakers) > 1 {
-		// subtract one because of uploader
-		valid = len(pool.BundleProposal.VotersValid)*2 > (len(pool.Stakers) - 1)
-		invalid = len(pool.BundleProposal.VotersInvalid)*2 >= (len(pool.Stakers) - 1)
-	}
-
-	// Check if next_uploader has to upload NO_QUORUM_BUNDLE
-	if pool.BundleProposal.BundleId != "" {
-		if !valid && !invalid {
-			return &types.QueryCanProposeResponse{
-				Possible: true,
-				Reason:   types.NO_QUORUM_BUNDLE,
-			}, nil
-		}
+	// Check if upload interval has been surpassed
+	if uint64(ctx.BlockTime().Unix()) < (pool.BundleProposal.CreatedAt + pool.UploadInterval) {
+		return &types.QueryCanProposeResponse{
+			Possible: false,
+			Reason:   "Upload interval not surpassed",
+		}, nil
 	}
 
 	return &types.QueryCanProposeResponse{

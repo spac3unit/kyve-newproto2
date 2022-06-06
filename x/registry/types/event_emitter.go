@@ -75,6 +75,17 @@ func EmitUnstakeEvent(ctx sdk.Context, poolId uint64, stakerCreator string, amou
 	emitMoneyPoolTransferEvent(ctx, "Unstaked", poolId, stakerCreator, amount)
 }
 
+func EmitUpdateMetadata(ctx sdk.Context, creator string, poolId uint64, commission string, moniker string, website string, logo string) {
+	emitBasicEvent(ctx, UpdateMetadataEventKey,
+		sdk.NewAttribute(EventCreator, creator),
+		sdk.NewAttribute(EventPoolId, strconv.FormatUint(poolId, 10)),
+		sdk.NewAttribute(UpdateMetadataCommission, commission),
+		sdk.NewAttribute(UpdateMetadataMoniker, moniker),
+		sdk.NewAttribute(UpdateMetadataWebsite, website),
+		sdk.NewAttribute(UpdateMetadataLogo, logo),
+	)
+}
+
 // DELEGATION
 
 func EmitDelegateEvent(ctx sdk.Context, poolId uint64, creator string, staker string, amount uint64) {
@@ -116,7 +127,7 @@ func EmitBundleVoteEvent(ctx sdk.Context, pool *Pool, msg *MsgVoteProposal) {
 		sdk.NewAttribute(EventPoolId, strconv.FormatUint(pool.Id, 10)),
 		sdk.NewAttribute(EventCreator, msg.Creator),
 		sdk.NewAttribute(VoteEventBundleId, msg.BundleId),
-		sdk.NewAttribute(VoteEventSupport, strconv.FormatBool(msg.Support)),
+		sdk.NewAttribute(VoteEventVote, strconv.FormatUint(uint64(msg.Vote), 10)),
 	)
 }
 

@@ -2,6 +2,7 @@ package keeper
 
 import (
 	"context"
+	"strings"
 
 	"github.com/KYVENetwork/chain/x/registry/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -36,6 +37,11 @@ func (k msgServer) SubmitBundleProposal(
 		return nil, sdkErrors.Wrap(sdkErrors.ErrUnauthorized, types.ErrPoolPaused.Error())
 	}
 
+	// Error if the pool is upgrading.
+	if pool.UpgradePlan.ScheduledAt > 0 && uint64(ctx.BlockTime().Unix()) >= pool.UpgradePlan.ScheduledAt {
+		return nil, sdkErrors.Wrap(sdkErrors.ErrUnauthorized, types.ErrPoolCurrentlyUpgrading.Error())
+	}
+
 	// Check if the sender is a protocol node (aka has staked into this pool).
 	_, isStaker := k.GetStaker(ctx, msg.Creator, msg.Id)
 	if !isStaker {
@@ -47,32 +53,14 @@ func (k msgServer) SubmitBundleProposal(
 		return nil, types.ErrInvalidArgs
 	}
 
-	// resubmit NO_DATA_BUNDLE
-	if pool.BundleProposal.BundleId == types.NO_DATA_BUNDLE && pool.BundleProposal.Uploader == msg.Creator {
-		// Check if bundle id is an ARWEAVE_BUNDLE
-		if msg.BundleId == types.NO_QUORUM_BUNDLE || msg.BundleId == types.NO_DATA_BUNDLE {
-			return nil, types.ErrInvalidArgs
-		}
+	// Validate from height
+	if msg.FromHeight != pool.BundleProposal.ToHeight {
+		return nil, types.ErrFromHeight
+	}
 
-		// Validate bundle args
-		if msg.BundleSize == 0 || msg.ByteSize == 0 {
-			return nil, types.ErrInvalidArgs
-		}
-
-		// resubmit ARWEAVE_BUNDLE
-		pool.BundleProposal = &types.BundleProposal{
-			Uploader:     pool.BundleProposal.Uploader,
-			NextUploader: pool.BundleProposal.NextUploader,
-			BundleId:     msg.BundleId,
-			ByteSize:     msg.ByteSize,
-			FromHeight:   pool.BundleProposal.ToHeight,
-			ToHeight:     pool.BundleProposal.ToHeight + msg.BundleSize,
-			CreatedAt:    uint64(ctx.BlockTime().Unix()),
-		}
-
-		k.SetPool(ctx, pool)
-
-		return &types.MsgSubmitBundleProposalResponse{}, nil
+	// Validate bundle size
+	if msg.BundleSize > pool.MaxBundleSize {
+		return nil, types.ErrMaxBundleSize
 	}
 
 	// Check if upload_interval has been surpassed
@@ -85,7 +73,9 @@ func (k msgServer) SubmitBundleProposal(
 		return nil, types.ErrNotDesignatedUploader
 	}
 
-	// Check if consensus has already been reached.
+	// EVALUATE PREVIOUS ROUND
+
+	// Check if quorum has already been reached.
 	valid := false
 	invalid := false
 
@@ -95,61 +85,21 @@ func (k msgServer) SubmitBundleProposal(
 		invalid = len(pool.BundleProposal.VotersInvalid)*2 >= (len(pool.Stakers) - 1)
 	}
 
-	// If the next-uploader submits the NO_QUORUM_BUNDLE it means that
-	// there was no quorum reached in the current round.
-	if msg.BundleId == types.NO_QUORUM_BUNDLE {
+	// Check args of bundle types
+	if strings.HasPrefix(msg.BundleId, types.KYVE_NO_DATA_BUNDLE) {
 		// Validate bundle args
 		if msg.BundleSize != 0 || msg.ByteSize != 0 {
 			return nil, types.ErrInvalidArgs
 		}
-
-		// check if the quorum was actually reached
-		if valid || invalid {
-			// next_uploader is submitting an invalid bundle
-			// because the quorum was reached
-			// TODO add some tolerance -> maybe in pool_parameters
-
-			// slash next_uploader for false NO_QUORUM_BUNDLE submit
-			slashAmount := k.slashStaker(ctx, &pool, msg.Creator, k.UploadSlash(ctx))
-
-			// emit slashing event
-			types.EmitSlashEvent(ctx, pool.Id, msg.Creator, slashAmount)
-
-			// Update current lowest staker
-			k.updateLowestStaker(ctx, &pool)
-
-			// keep the BundleProposal
-			// just replace the nextUploader and the createdAt time.
-			pool.BundleProposal.CreatedAt = uint64(ctx.BlockTime().Unix())
-			// select next_uploader from voters and uploader
-			pool.BundleProposal.NextUploader = k.getNextUploaderByRandom(ctx, &pool, pool.Stakers)
-		} else {
-			// If consensus wasn't reached, we drop the bundle and emit an event.
-			types.EmitBundleDroppedQuorumNotReachedEvent(ctx, &pool)
-
-			pool.BundleProposal = &types.BundleProposal{
-				NextUploader: k.getNextUploaderByRandom(ctx, &pool, pool.Stakers),
-				FromHeight:   pool.BundleProposal.FromHeight,
-				ToHeight:     pool.BundleProposal.FromHeight,
-				CreatedAt:    uint64(ctx.BlockTime().Unix()),
-			}
-		}
-
-		k.SetPool(ctx, pool)
-
-		return &types.MsgSubmitBundleProposalResponse{}, nil
-	}
-
-	// Check args of NO_DATA_BUNDLE
-	if msg.BundleId == types.NO_DATA_BUNDLE {
+	} else {
 		// Validate bundle args
-		if msg.BundleSize != 0 || msg.ByteSize != 0 {
+		if msg.BundleSize == 0 || msg.ByteSize == 0 {
 			return nil, types.ErrInvalidArgs
 		}
 	}
 
-	// If the pool is in "genesis state" or the bundle was dropped, just register new proposal.
-	if pool.BundleProposal.BundleId == "" {
+	// If bundle was dropped or is of type KYVE_NO_DATA_BUNDLE just register new bundle.
+	if pool.BundleProposal.BundleId == "" || strings.HasPrefix(pool.BundleProposal.BundleId, types.KYVE_NO_DATA_BUNDLE) {
 		pool.BundleProposal = &types.BundleProposal{
 			Uploader:     msg.Creator,
 			NextUploader: k.getNextUploaderByRandom(ctx, &pool, pool.Stakers),
@@ -165,7 +115,18 @@ func (k msgServer) SubmitBundleProposal(
 		return &types.MsgSubmitBundleProposalResponse{}, nil
 	}
 
-	// EVALUATE PREVIOUS ROUND
+	// handle stakers who did not vote at all
+	k.handleNonVoters(ctx, &pool)
+
+	// Get next uploader
+	voters := append(pool.BundleProposal.VotersValid, pool.BundleProposal.VotersInvalid...)
+	nextUploader := ""
+
+	if len(voters) > 0 {
+		nextUploader = k.getNextUploaderByRandom(ctx, &pool, voters)
+	} else {
+		nextUploader = k.getNextUploaderByRandom(ctx, &pool, pool.Stakers)
+	}
 
 	// handle valid proposal
 	if valid {
@@ -204,9 +165,9 @@ func (k msgServer) SubmitBundleProposal(
 
 		// Calculate the individual cost for each pool funder.
 		// NOTE: Because of integer division, it is possible that there is a small remainder.
-		//       This remainder is in worst case MaxFundersAmount(tkyve) and is charged to the lowest funder.
+		// This remainder is in worst case MaxFundersAmount(tkyve) and is charged to the lowest funder.
 		fundersCost := bundleReward / uint64(len(pool.Funders))
-		fundersCostRemainder := bundleReward - uint64(len(pool.Funders))*fundersCost
+		fundersCostRemainder := bundleReward - (uint64(len(pool.Funders)) * fundersCost)
 
 		// Fetch the lowest funder, and find a new one if the current one isn't found.
 		lowestFunder, foundLowestFunder := k.GetFunder(ctx, pool.LowestFunder, pool.Id)
@@ -216,75 +177,100 @@ func (k msgServer) SubmitBundleProposal(
 			lowestFunder, _ = k.GetFunder(ctx, pool.LowestFunder, pool.Id)
 		}
 
+		slashedFunds := uint64(0)
+
 		// Remove every funder who can't afford the funder cost.
-		if fundersCost+fundersCostRemainder > lowestFunder.Amount {
-			// First, let's remove the lowest funder.
-			k.removeFunder(ctx, &pool, &lowestFunder)
-
-			err := k.transferToTreasury(ctx, lowestFunder.Amount)
-			if err != nil {
-				return nil, err
-			}
-
+		for fundersCost+fundersCostRemainder > lowestFunder.Amount {
 			// Now, let's remove all other funders who have run out of funds.
 			for _, account := range pool.Funders {
 				funder, _ := k.GetFunder(ctx, account, pool.Id)
 
 				if funder.Amount < fundersCost {
+					// remove funder
 					k.removeFunder(ctx, &pool, &funder)
 
-					err := k.transferToTreasury(ctx, funder.Amount)
+					// transfer amount to treasury
+					slashedFunds += funder.Amount
+
+					// Emit a defund event.
+					types.EmitDefundPoolEvent(ctx, msg.Id, funder.Account, funder.Amount)
+				}
+			}
+
+			if pool.TotalFunds > 0 {
+				fundersCost = bundleReward / uint64(len(pool.Funders))
+				fundersCostRemainder = bundleReward - (uint64(len(pool.Funders)) * fundersCost)
+
+				k.updateLowestFunder(ctx, &pool)
+				lowestFunder, _ = k.GetFunder(ctx, pool.LowestFunder, pool.Id)
+			} else {
+				// Recalculate the lowest funder, update, and return.
+				k.updateLowestFunder(ctx, &pool)
+
+				if slashedFunds > 0 {
+					// transfer slashed funds to treasury
+					err := k.transferToTreasury(ctx, slashedFunds)
 					if err != nil {
 						return nil, err
 					}
 				}
+
+				pool.BundleProposal = &types.BundleProposal{
+					Uploader:      pool.BundleProposal.Uploader,
+					NextUploader:  pool.BundleProposal.NextUploader,
+					BundleId:      pool.BundleProposal.BundleId,
+					ByteSize:      pool.BundleProposal.ByteSize,
+					FromHeight:    pool.BundleProposal.FromHeight,
+					ToHeight:      pool.BundleProposal.ToHeight,
+					CreatedAt:     uint64(ctx.BlockTime().Unix()),
+					VotersValid:   pool.BundleProposal.VotersValid,
+					VotersInvalid: pool.BundleProposal.VotersInvalid,
+				}
+
+				k.SetPool(ctx, pool)
+
+				// Emit a bundle dropped event because of insufficient funds.
+				types.EmitBundleDroppedInsufficientFundsEvent(ctx, &pool)
+
+				return &types.MsgSubmitBundleProposalResponse{}, nil
 			}
+		}
 
-			// Recalculate the lowest funder, update, and return.
-			k.updateLowestFunder(ctx, &pool)
-
-			pool.BundleProposal = &types.BundleProposal{
-				Uploader:      pool.BundleProposal.Uploader,
-				NextUploader:  pool.BundleProposal.NextUploader,
-				BundleId:      pool.BundleProposal.BundleId,
-				ByteSize:      pool.BundleProposal.ByteSize,
-				FromHeight:    pool.BundleProposal.FromHeight,
-				ToHeight:      pool.BundleProposal.ToHeight,
-				CreatedAt:     uint64(ctx.BlockTime().Unix()),
-				VotersValid:   pool.BundleProposal.VotersValid,
-				VotersInvalid: pool.BundleProposal.VotersInvalid,
+		if slashedFunds > 0 {
+			// transfer slashed funds to treasury
+			err := k.transferToTreasury(ctx, slashedFunds)
+			if err != nil {
+				return nil, err
 			}
-
-			k.SetPool(ctx, pool)
-
-			// Emit a bundle dropped event because of insufficient funds.
-			types.EmitBundleDroppedInsufficientFundsEvent(ctx, &pool)
-
-			return &types.MsgSubmitBundleProposalResponse{}, nil
 		}
 
 		// Charge every funder equally.
 		for _, account := range pool.Funders {
 			funder, _ := k.GetFunder(ctx, account, pool.Id)
-			funder.Amount -= fundersCost
+
+			if funder.Amount >= fundersCost {
+				funder.Amount -= fundersCost
+			}
+
 			k.SetFunder(ctx, funder)
 		}
 
 		// Remove any remainder cost from the lowest funder.
 		lowestFunder, _ = k.GetFunder(ctx, pool.LowestFunder, pool.Id)
-		lowestFunder.Amount -= fundersCostRemainder
+
+		if lowestFunder.Amount >= fundersCostRemainder {
+			lowestFunder.Amount -= fundersCostRemainder
+		}
+
 		k.SetFunder(ctx, lowestFunder)
 
 		// Subtract bundle reward from the pool's total funds.
 		pool.TotalFunds -= bundleReward
 
-		// Only slash with vote slash if bundle is of type ARWEAVE_BUNDLE
-		if pool.BundleProposal.BundleId != types.NO_DATA_BUNDLE {
-			// Partially slash all nodes who voted incorrectly.
-			for _, voter := range pool.BundleProposal.VotersInvalid {
-				slashAmount := k.slashStaker(ctx, &pool, voter, k.VoteSlash(ctx))
-				types.EmitSlashEvent(ctx, pool.Id, voter, slashAmount)
-			}
+		// Partially slash all nodes who voted incorrectly.
+		for _, voter := range pool.BundleProposal.VotersInvalid {
+			slashAmount := k.slashStaker(ctx, &pool, voter, k.VoteSlash(ctx))
+			types.EmitSlashEvent(ctx, pool.Id, voter, slashAmount)
 		}
 
 		// Send payout to treasury.
@@ -305,25 +291,13 @@ func (k msgServer) SubmitBundleProposal(
 		pool.TotalBundleRewards = pool.TotalBundleRewards + bundleReward
 		pool.TotalBundles = pool.TotalBundles + 1
 
-		// Only add bundles with data to store
-		if pool.BundleProposal.BundleId != types.NO_DATA_BUNDLE {
-			k.SetProposal(ctx, types.Proposal{
-				BundleId:    pool.BundleProposal.BundleId,
-				PoolId:      pool.Id,
-				Uploader:    pool.BundleProposal.Uploader,
-				FromHeight:  pool.BundleProposal.FromHeight,
-				ToHeight:    pool.BundleProposal.ToHeight,
-				FinalizedAt: uint64(ctx.BlockHeight()),
-			})
-		}
-
 		// Emit a valid bundle event.
 		types.EmitBundleValidEvent(ctx, &pool, bundleReward)
 
 		// Set submitted bundle as new bundle proposal and select new next_uploader
 		pool.BundleProposal = &types.BundleProposal{
 			Uploader:     msg.Creator,
-			NextUploader: k.getNextUploaderByRandom(ctx, &pool, pool.Stakers),
+			NextUploader: nextUploader,
 			BundleId:     msg.BundleId,
 			ByteSize:     msg.ByteSize,
 			FromHeight:   pool.BundleProposal.ToHeight,
@@ -335,25 +309,14 @@ func (k msgServer) SubmitBundleProposal(
 
 		return &types.MsgSubmitBundleProposalResponse{}, nil
 	} else if invalid {
-		// Only slash with vote slash if bundle is of type ARWEAVE_BUNDLE
-		if pool.BundleProposal.BundleId != types.NO_DATA_BUNDLE {
-			// Partially slash all nodes who voted incorrectly.
-			for _, voter := range pool.BundleProposal.VotersValid {
-				slashAmount := k.slashStaker(ctx, &pool, voter, k.VoteSlash(ctx))
-				types.EmitSlashEvent(ctx, pool.Id, voter, slashAmount)
-			}
+		// Partially slash all nodes who voted incorrectly.
+		for _, voter := range pool.BundleProposal.VotersValid {
+			slashAmount := k.slashStaker(ctx, &pool, voter, k.VoteSlash(ctx))
+			types.EmitSlashEvent(ctx, pool.Id, voter, slashAmount)
 		}
-
-		var slashAmount uint64
 
 		// Partially slash the uploader.
-		if pool.BundleProposal.BundleId == types.NO_DATA_BUNDLE {
-			// Slash uploader with timeout slash if bundle was of type NO_DATA_BUNDLE
-			slashAmount = k.slashStaker(ctx, &pool, pool.BundleProposal.Uploader, k.TimeoutSlash(ctx))
-		} else {
-			// Slash uploader with upload slash if bundle was of type ARWEAVE_BUNDLE
-			slashAmount = k.slashStaker(ctx, &pool, pool.BundleProposal.Uploader, k.UploadSlash(ctx))
-		}
+		slashAmount := k.slashStaker(ctx, &pool, pool.BundleProposal.Uploader, k.UploadSlash(ctx))
 
 		// emit slash event
 		types.EmitSlashEvent(ctx, pool.Id, pool.BundleProposal.Uploader, slashAmount)
@@ -376,7 +339,6 @@ func (k msgServer) SubmitBundleProposal(
 
 		return &types.MsgSubmitBundleProposalResponse{}, nil
 	} else {
-		// Throw error, should register bundle NO_QUORUM_BUNDLE instead.
 		return nil, types.ErrQuorumNotReached
 	}
 }

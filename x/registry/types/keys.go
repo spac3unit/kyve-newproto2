@@ -23,11 +23,10 @@ const (
 
 // registry constants
 const (
-	MaxFunders        = 50 // maximum amount of funders which are allowed
-	MaxStakers        = 50 // maximum amount of stakers which are allowed
-	DefaultCommission = "0.9"
-	NO_DATA_BUNDLE    = "NO_DATA_BUNDLE"
-	NO_QUORUM_BUNDLE  = "NO_QUORUM_BUNDLE"
+	MaxFunders          = 50 // maximum amount of funders which are allowed
+	MaxStakers          = 50 // maximum amount of stakers which are allowed
+	DefaultCommission   = "0.9"
+	KYVE_NO_DATA_BUNDLE = "KYVE_NO_DATA_BUNDLE"
 )
 
 // ========== EVENTS ===================
@@ -43,7 +42,7 @@ const (
 const (
 	VoteEventKey      = "Voted"
 	VoteEventBundleId = "BundleId"
-	VoteEventSupport  = "Support"
+	VoteEventVote     = "Vote"
 )
 
 // slashing
@@ -67,6 +66,14 @@ const (
 	ProposalEventStatus       = "Status"
 )
 
+const (
+	UpdateMetadataEventKey = "UpdateMetadata"
+	UpdateMetadataCommission = "Commission"
+	UpdateMetadataMoniker = "Moniker"
+	UpdateMetadataWebsite = "Website"
+	UpdateMetadataLogo = "Logo"
+)
+
 // ============ KV-STORE ===============
 
 func KeyPrefix(p string) []byte {
@@ -81,21 +88,37 @@ const (
 
 const (
 	// DelegationEntriesKeyPrefix is the prefix to retrieve all DelegationEntries
+	// refactor to []byte{0x01}
 	DelegationEntriesKeyPrefix = "DelegationEntries/value/"
 	// DelegationPoolDataKeyPrefix is the prefix to retrieve all DelegationPoolData
+	// refactor to []byte{0x02}
 	DelegationPoolDataKeyPrefix = "DelegationPoolData/value/"
 	// DelegatorKeyPrefix is the prefix to retrieve all Delegator
+	// refactor to []byte{0x03}
 	DelegatorKeyPrefix = "Delegator/value/"
 	// FunderKeyPrefix is the prefix to retrieve all Funder
+	// refactor to []byte{0x05}
 	FunderKeyPrefix = "Funder/value/"
 	// ProposalKeyPrefix is the prefix to retrieve all Proposal
+	// refactor to []byte{0x06}
 	ProposalKeyPrefix = "Proposal/value/"
 	// StakerKeyPrefix is the prefix to retrieve all Staker
+	// refactor to []byte{0x08}
 	StakerKeyPrefix = "Staker/value/"
 	// UnbondingEntriesKeyPrefix is the prefix to retrieve all UnbondingEntries
+	// refactor to []byte{0x09}
 	UnbondingEntriesKeyPrefix = "UnbondingEntries/value/"
-	// UnbondingEntriesKeyPrefix is the prefix to retrieve all UnbondingEntries
+	// UnbondingEntriesKeyPrefixByDelegator is the prefix to retrieve all UnbondingEntries
+	// refactor to []byte{0x10}
 	UnbondingEntriesKeyPrefixByDelegator = "UnbondingEntriesByDelegator/value/"
+)
+
+var (
+	// DelegatorKeyPrefixIndex2 is the prefix for a different key order for the DelegatorKeyPrefix
+	DelegatorKeyPrefixIndex2 = []byte{0x04}
+
+	// ProposalKeyPrefixIndex2 is the prefix for a different key order for the DelegatorKeyPrefix
+	ProposalKeyPrefixIndex2 = []byte{0x08}
 )
 
 // DelegationEntriesKey returns the store Key to retrieve a DelegationEntries from the index fields
@@ -113,6 +136,11 @@ func DelegatorKey(poolId uint64, stakerAddress string, delegatorAddress string) 
 	return KeyPrefixBuilder{}.AInt(poolId).AString(stakerAddress).AString(delegatorAddress).Key
 }
 
+// DelegatorKeyIndex2 returns the store Key to retrieve a Delegator from the index fields
+func DelegatorKeyIndex2(delegatorAddress string, poolId uint64, stakerAddress string) []byte {
+	return KeyPrefixBuilder{}.AString(delegatorAddress).AInt(poolId).AString(stakerAddress).Key
+}
+
 // FunderKey returns the store Key to retrieve a Funder from the index fields
 func FunderKey(funder string, poolId uint64) []byte {
 	return KeyPrefixBuilder{}.AString(funder).AInt(poolId).Key
@@ -121,6 +149,11 @@ func FunderKey(funder string, poolId uint64) []byte {
 // ProposalKey returns the store Key to retrieve a Proposal from the index fields
 func ProposalKey(bundleId string) []byte {
 	return KeyPrefixBuilder{}.AString(bundleId).Key
+}
+
+// ProposalKey returns the store Key to retrieve a Proposal from the index fields
+func ProposalKeyIndex2(poolId uint64, fromId uint64) []byte {
+	return KeyPrefixBuilder{}.AInt(poolId).AInt(fromId).Key
 }
 
 // StakerKey returns the store Key to retrieve a Staker from the index fields
