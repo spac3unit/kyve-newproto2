@@ -25,4 +25,4 @@ If you need to build for different architectures, use the `-t` flag, e.g. `-t li
 
 ## Running a chain node
 
-Full documentation for setting up a chain node are provided [here](https://docs.kyve.network/intro/chain-node.html).
+Full documentation for setting up a chain node are provided [here](https://docs.kyve.network/getting-started/chain-node.html).
