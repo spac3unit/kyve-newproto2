@@ -51,7 +51,12 @@ func (k Keeper) handleNonVoters(ctx sdk.Context, pool *types.Pool) {
 				slashAmount := k.slashStaker(ctx, pool, staker.Account, k.TimeoutSlash(ctx))
 
 				// emit slashing event
-				types.EmitSlashEvent(ctx, pool.Id, staker.Account, slashAmount)
+				ctx.EventManager().EmitTypedEvent(&types.EventSlash{
+					PoolId:    pool.Id,
+					Address:   staker.Account,
+					Amount:    slashAmount,
+					SlashType: types.SLASH_TYPE_TIMEOUT,
+				})
 
 				// Check if staker is still in stakers list and remove staker.
 				staker, foundStaker = k.GetStaker(ctx, voter, pool.Id)
@@ -65,7 +70,11 @@ func (k Keeper) handleNonVoters(ctx sdk.Context, pool *types.Pool) {
 					k.removeStaker(ctx, pool, &staker)
 
 					// emit unstake event
-					types.EmitUnstakeEvent(ctx, pool.Id, staker.Account, staker.Amount)
+					ctx.EventManager().EmitTypedEvent(&types.EventUnstakePool{
+						PoolId:  pool.Id,
+						Address: staker.Account,
+						Amount:  staker.Amount,
+					})
 				}
 
 				// Update current lowest staker
@@ -202,6 +211,29 @@ func (k Keeper) getWeightedRandomChoice(candidates []RandomChoiceCandidate, seed
 	}
 
 	return ""
+}
+
+func (k Keeper) GetUploadProbability(ctx sdk.Context, stakerAddress string, poolId uint64) sdk.Dec {
+
+	pool, poolFound := k.GetPool(ctx, poolId)
+	if !poolFound {
+		return sdk.NewDec(0)
+	}
+
+	totalWeight := uint64(0)
+	userWeight := uint64(0)
+
+	for _, s := range pool.Stakers {
+		staker, _ := k.GetStaker(ctx, s, pool.Id)
+		delegation, _ := k.GetDelegationPoolData(ctx, pool.Id, s)
+
+		totalWeight += staker.Amount + getDelegationWeight(delegation.TotalDelegation)
+		if staker.Account == stakerAddress {
+			userWeight = staker.Amount + getDelegationWeight(delegation.TotalDelegation)
+		}
+	}
+
+	return sdk.NewDec(int64(userWeight)).Quo(sdk.NewDec(int64(totalWeight)))
 }
 
 // Calculate Delegation weight to influnce the upload probability

@@ -75,7 +75,7 @@ func (k msgServer) VoteProposal(
 			hasVotedValid = true
 		}
 	}
-	
+
 	for _, voter := range pool.BundleProposal.VotersInvalid {
 		if voter == msg.Creator {
 			hasVotedInvalid = true
@@ -118,7 +118,15 @@ func (k msgServer) VoteProposal(
 	k.SetStaker(ctx, staker)
 
 	// Emit a vote event.
-	types.EmitBundleVoteEvent(ctx, &pool, msg)
+	err := ctx.EventManager().EmitTypedEvent(&types.EventBundleVote{
+		PoolId:   msg.Id,
+		Address:  msg.Creator,
+		BundleId: msg.BundleId,
+		Vote:     msg.Vote,
+	})
+	if err != nil {
+		return nil, err
+	}
 
 	k.SetPool(ctx, pool)
 

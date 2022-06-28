@@ -22,11 +22,13 @@ func (k Keeper) AccountAssets(goCtx context.Context, req *types.QueryAccountAsse
 	ctx := sdk.UnwrapSDKContext(goCtx)
 
 	response := types.QueryAccountAssetsResponse{
-		Balance:            0,
-		ProtocolStaking:    0,
-		ProtocolDelegation: 0,
-		ProtocolRewards:    0,
-		ProtocolFunding:    0,
+		Balance:                     0,
+		ProtocolStaking:             0,
+		ProtocolStakingUnbonding:    0,
+		ProtocolDelegation:          0,
+		ProtocolDelegationUnbonding: 0,
+		ProtocolRewards:             0,
+		ProtocolFunding:             0,
 	}
 
 	// Fetch account balance
@@ -94,6 +96,33 @@ func (k Keeper) AccountAssets(goCtx context.Context, req *types.QueryAccountAsse
 		k.cdc.MustUnmarshal(funderIterator.Value(), &val)
 
 		response.ProtocolFunding += val.Amount
+	}
+
+	// Unbondings
+	// Iterate all UnbondingStaker entries to get total unbonding amount
+	unbondingStaker := prefix.NewStore(ctx.KVStore(k.storeKey), types.UnbondingStakerKeyPrefix)
+	unbondingStakerIterator := sdk.KVStorePrefixIterator(unbondingStaker, types.KeyPrefixBuilder{}.AString(req.Address).Key)
+
+	defer unbondingStakerIterator.Close()
+
+	for ; unbondingStakerIterator.Valid(); unbondingStakerIterator.Next() {
+		var val types.UnbondingStaker
+		k.cdc.MustUnmarshal(unbondingStakerIterator.Value(), &val)
+
+		response.ProtocolStakingUnbonding += val.UnbondingAmount
+	}
+
+	// Iterate all UnbondingDelegation entries to get total delegation unbonding amount
+	unbondingDelegatorStore := prefix.NewStore(ctx.KVStore(k.storeKey), types.UnbondingDelegationQueueEntryKeyPrefixIndex2)
+	unbondingDelegatorIterator := sdk.KVStorePrefixIterator(unbondingDelegatorStore, types.KeyPrefixBuilder{}.AString(req.Address).Key)
+
+	defer unbondingDelegatorIterator.Close()
+
+	for ; unbondingDelegatorIterator.Valid(); unbondingDelegatorIterator.Next() {
+		delegationKey := binary.BigEndian.Uint64(unbondingDelegatorIterator.Key()[44 : 44+8])
+
+		unbondingDelegationEntry, _ := k.GetUnbondingDelegationQueueEntry(ctx, delegationKey)
+		response.ProtocolDelegationUnbonding += unbondingDelegationEntry.Amount
 	}
 
 	return &response, nil

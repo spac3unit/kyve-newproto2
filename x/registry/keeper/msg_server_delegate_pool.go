@@ -67,7 +67,15 @@ func (k msgServer) DelegatePool(
 	}
 
 	// Emit a delegation event.
-	types.EmitDelegateEvent(ctx, pool.Id, msg.Creator, msg.Staker, msg.Amount)
+	errEmit := ctx.EventManager().EmitTypedEvent(&types.EventDelegatePool{
+		PoolId:  pool.Id,
+		Address: msg.Creator,
+		Node:    msg.Staker,
+		Amount:  msg.Amount,
+	})
+	if errEmit != nil {
+		return nil, errEmit
+	}
 
 	// Update and return.
 	pool.TotalDelegation += msg.Amount

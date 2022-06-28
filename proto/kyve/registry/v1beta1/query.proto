@@ -60,12 +60,18 @@ service Query {
 
   // Proposals ...
   rpc Proposals(QueryProposalsRequest) returns (QueryProposalsResponse) {
+    option deprecated = true;
     option (google.api.http).get = "/kyve/registry/v1beta1/proposals/{pool_id}";
   }
 
   // ProposalByHeight ...
   rpc ProposalByHeight(QueryProposalByHeightRequest) returns (QueryProposalByHeightResponse) {
     option (google.api.http).get = "/kyve/registry/v1beta1/proposal_by_height/{pool_id}/{height}";
+  }
+
+  // ProposalByHeight ...
+  rpc ProposalSinceFinalizedAt(QueryProposalSinceFinalizedAtRequest) returns (QueryProposalSinceFinalizedAtResponse) {
+    option (google.api.http).get = "/kyve/registry/v1beta1/proposal_since_finalized_at/{pool_id}/{finalized_at}";
   }
 
   // PROTOCOL NODE - FLOW
@@ -90,6 +96,16 @@ service Query {
   // AccountAssets returns an overview of the sum of all balances for a given user. e.g. balance, staking, funding, etc.
   rpc AccountAssets(QueryAccountAssetsRequest) returns (QueryAccountAssetsResponse) {
     option (google.api.http).get = "/kyve/registry/v1beta1/account_assets/{address}";
+  }
+
+  // AccountStakingUnbondings ...
+  rpc AccountStakingUnbondings(QueryAccountStakingUnbondingsRequest) returns (QueryAccountStakingUnbondingsResponse) {
+    option (google.api.http).get = "/kyve/registry/v1beta1/account_staking_unbondings/{address}";
+  }
+
+  // AccountDelegationUnbondings ...
+  rpc AccountDelegationUnbondings(QueryAccountDelegationUnbondingsRequest) returns (QueryAccountDelegationUnbondingsResponse) {
+    option (google.api.http).get = "/kyve/registry/v1beta1/account_delegation_unbondings/{address}";
   }
 
   // AccountFundedList returns all pools the given user has funded into.
@@ -125,7 +141,9 @@ service Query {
   }
 }
 
-// PARAMS
+// ######################
+// =====   PARAMS   =====
+// ######################
 
 // QueryParamsRequest is request type for the Query/Params RPC method.
 message QueryParamsRequest {}
@@ -136,7 +154,9 @@ message QueryParamsResponse {
   kyve.registry.v1beta1.Params params = 1 [(gogoproto.nullable) = false];
 }
 
-// POOL
+// ######################
+// =====    POOL    =====
+// ######################
 
 // QueryPoolRequest is the request type for the Query/Pool RPC method.
 message QueryPoolRequest {
@@ -244,9 +264,15 @@ message StakerResponse {
   string logo = 9;
   // points
   uint64 points = 10;
+  // unbonding_amount ...
+  uint64 unbonding_amount = 11;
+  // upload_probability
+  string upload_probability = 12;
 }
 
-// WARP
+// ######################
+// =====    WARP    =====
+// ######################
 
 // QueryProposalRequest is the request type for the Query/Proposal RPC method.
 message QueryProposalRequest {
@@ -288,6 +314,24 @@ message QueryProposalByHeightRequest {
 message QueryProposalByHeightResponse {
   // proposal ...
   kyve.registry.v1beta1.Proposal proposal = 1 [(gogoproto.nullable) = false];
+}
+
+// QueryProposalByFinalizedAtRequest ...
+message QueryProposalSinceFinalizedAtRequest {
+  // pagination defines an optional pagination for the request.
+  cosmos.base.query.v1beta1.PageRequest pagination = 1;
+  // pool_id ...
+  uint64 pool_id = 2;
+  // height ...
+  uint64 finalized_at = 3;
+}
+
+// QueryProposalByFinalizedAtResponse ...
+message QueryProposalSinceFinalizedAtResponse {
+  // proposal ...
+  repeated kyve.registry.v1beta1.Proposal proposals = 1 [(gogoproto.nullable) = false];
+  // pagination defines the pagination in the response.
+  cosmos.base.query.v1beta1.PageResponse pagination = 2;
 }
 
 // PROTOCOL NODE - FLOW
@@ -346,7 +390,9 @@ message QueryStakeInfoResponse {
   string minimum_stake = 3;
 }
 
-// STATS FOR USER ACCOUNT
+// ###################
+// ===== ACCOUNT =====
+// ###################
 
 // QueryAccountAssetsRequest is the request type for the Query/AccountAssets RPC method.
 message QueryAccountAssetsRequest {
@@ -360,15 +406,73 @@ message QueryAccountAssetsResponse {
   uint64 balance = 1;
   // protocol_staking ...
   uint64 protocol_staking = 2;
+  // protocol_staking_unbonding
+  uint64 protocol_staking_unbonding = 3;
   // protocol_delegation ...
-  uint64 protocol_delegation = 3;
+  uint64 protocol_delegation = 4;
+  // protocol_delegation_unbonding
+  uint64 protocol_delegation_unbonding = 5;
   // protocol_rewards ...
   uint64 protocol_rewards = 6;
   // protocol_funding ...
   uint64 protocol_funding = 7;
 }
 
-// QueryAccountFundedListRequest is the request type for the Query/AccountFundedList RPC method.
+// QueryAccountFundedListRequest ...
+message QueryAccountStakingUnbondingsRequest {
+  // pagination defines an optional pagination for the request.
+  cosmos.base.query.v1beta1.PageRequest pagination = 1;
+  // address ...
+  string address = 2;
+}
+
+// QueryAccountAssetsResponse is the response type for the Query/AccountAssets RPC method.
+message QueryAccountStakingUnbondingsResponse {
+  // balance ...
+  repeated kyve.registry.v1beta1.StakingUnbonding unbondings = 1 [(gogoproto.nullable) = false];
+  // pagination defines the pagination in the response.
+  cosmos.base.query.v1beta1.PageResponse pagination = 2;
+}
+
+// QueryAccountAssetsResponse is the response type for the Query/AccountAssets RPC method.
+message StakingUnbonding {
+  // amount
+  uint64 amount = 1;
+  // creation_time
+  uint64 creation_time = 2;
+  // pool ...
+  kyve.registry.v1beta1.Pool pool = 3;
+}
+
+// QueryAccountFundedListRequest ...
+message QueryAccountDelegationUnbondingsRequest {
+  // pagination defines an optional pagination for the request.
+  cosmos.base.query.v1beta1.PageRequest pagination = 1;
+  // address ...
+  string address = 2;
+}
+
+// QueryAccountAssetsResponse is the response type for the Query/AccountAssets RPC method.
+message QueryAccountDelegationUnbondingsResponse {
+  // balance ...
+  repeated kyve.registry.v1beta1.DelegationUnbonding unbondings = 1 [(gogoproto.nullable) = false];
+  // pagination defines the pagination in the response.
+  cosmos.base.query.v1beta1.PageResponse pagination = 2;
+}
+
+// QueryAccountAssetsResponse is the response type for the Query/AccountAssets RPC method.
+message DelegationUnbonding {
+  // amount
+  uint64 amount = 1;
+  // creation_time
+  uint64 creation_time = 2;
+  // creation_time
+  kyve.registry.v1beta1.StakerResponse staker = 3;
+  // pool ...
+  kyve.registry.v1beta1.Pool pool = 4;
+}
+
+// QueryAccountFundedListRequest is the request type for the account queries with pagination
 message QueryAccountFundedListRequest {
   // pagination defines an optional pagination for the request.
   cosmos.base.query.v1beta1.PageRequest pagination = 1;
@@ -394,7 +498,7 @@ message Funded {
   kyve.registry.v1beta1.Pool pool = 3;
 }
 
-// QueryAccountStakedListRequest is the request type for the Query/AccountStakedList RPC method.
+// QueryAccountStakedListRequest ...
 message QueryAccountStakedListRequest {
   // pagination defines an optional pagination for the request.
   cosmos.base.query.v1beta1.PageRequest pagination = 1;
@@ -422,9 +526,13 @@ message Staked {
   uint64 amount = 4;
   // pool ...
   kyve.registry.v1beta1.Pool pool = 6;
+  // unbonding_amount ...
+  uint64 unbonding_amount = 7;
+  // upload_probability
+  string upload_probability = 8;
 }
 
-// QueryAccountDelegationListRequest is the request type for the Query/AccountDelegationList RPC method.
+// QueryAccountDelegationListRequest ...
 message QueryAccountDelegationListRequest {
   // pagination defines an optional pagination for the request.
   cosmos.base.query.v1beta1.PageRequest pagination = 1;
@@ -438,22 +546,6 @@ message QueryAccountDelegationListResponse {
   repeated kyve.registry.v1beta1.DelegatorResponse delegations = 1 [(gogoproto.nullable) = false];
   // pagination defines the pagination in the response.
   cosmos.base.query.v1beta1.PageResponse pagination = 2;
-}
-
-// QueryDelegatorRequest is the request type for the Query/Delegator RPC method.
-message QueryDelegatorRequest {
-  // pool_id defines the unique ID of the pool.
-  uint64 pool_id = 1;
-  // staker ...
-  string staker = 2;
-  // delegator ...
-  string delegator = 3;
-}
-
-// QueryDelegatorResponse is the response type for the Query/Delegator RPC method.
-message QueryDelegatorResponse {
-  // delegator ...
-  kyve.registry.v1beta1.StakerDelegatorResponse delegator = 1;
 }
 
 // DelegatorResponse ...
@@ -472,7 +564,37 @@ message DelegatorResponse {
   kyve.registry.v1beta1.DelegationPoolData delegation_pool_data = 6;
 }
 
-// DELEGATION
+// ######################
+// ===== DELEGATION =====
+// ######################
+
+// QueryDelegatorRequest is the request type for the Query/Delegator RPC method.
+message QueryDelegatorRequest {
+  // pool_id defines the unique ID of the pool.
+  uint64 pool_id = 1;
+  // staker ...
+  string staker = 2;
+  // delegator ...
+  string delegator = 3;
+}
+
+// QueryDelegatorResponse is the response type for the Query/Delegator RPC method.
+message QueryDelegatorResponse {
+  // delegator ...
+  kyve.registry.v1beta1.StakerDelegatorResponse delegator = 1;
+}
+
+// StakerDelegatorResponse ...
+message StakerDelegatorResponse {
+  // delegator ...
+  string delegator = 1;
+  // current_reward ...
+  uint64 current_reward = 2;
+  // delegation_amount ...
+  uint64 delegation_amount = 3;
+  // staker ...
+  string staker = 4;
+}
 
 // QueryDelegatorsByPoolAndStakerRequest is the request type for the Query/DelegatorsByPoolAndStaker RPC method.
 message QueryDelegatorsByPoolAndStakerRequest {
@@ -494,18 +616,6 @@ message QueryDelegatorsByPoolAndStakerResponse {
   kyve.registry.v1beta1.DelegationPoolData delegation_pool_data = 3;
   // pagination defines the pagination in the response.
   cosmos.base.query.v1beta1.PageResponse pagination = 4;
-}
-
-// StakerDelegatorResponse ...
-message StakerDelegatorResponse {
-  // delegator ...
-  string delegator = 1;
-  // current_reward ...
-  uint64 current_reward = 2;
-  // delegation_amount ...
-  uint64 delegation_amount = 3;
-  // staker ...
-  string staker = 4;
 }
 
 // QueryStakersByPoolAndDelegatorRequest  is the request type for the Query/StakersByPoolAndDelegator RPC method.

@@ -47,7 +47,14 @@ func (k msgServer) DefundPool(goCtx context.Context, msg *types.MsgDefundPool) (
 	}
 
 	// Emit a defund event.
-	types.EmitDefundPoolEvent(ctx, msg.Id, msg.Creator, msg.Amount)
+	errEmit := ctx.EventManager().EmitTypedEvent(&types.EventDefundPool{
+		PoolId:  msg.Id,
+		Address: msg.Creator,
+		Amount:  msg.Amount,
+	})
+	if errEmit != nil {
+		return nil, errEmit
+	}
 
 	// Update and return.
 	k.updateLowestFunder(ctx, &pool)

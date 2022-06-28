@@ -39,7 +39,14 @@ func (k msgServer) FundPool(goCtx context.Context, msg *types.MsgFundPool) (*typ
 				}
 
 				// Emit a defund event.
-				types.EmitDefundPoolEvent(ctx, msg.Id, lowestFunder.Account, lowestFunder.Amount)
+				errEmit := ctx.EventManager().EmitTypedEvent(&types.EventDefundPool{
+					PoolId:  msg.Id,
+					Address: lowestFunder.Account,
+					Amount:  lowestFunder.Amount,
+				})
+				if errEmit != nil {
+					return nil, errEmit
+				}
 
 				// Remove lowest funder.
 				k.removeFunder(ctx, &pool, &lowestFunder)
@@ -63,7 +70,14 @@ func (k msgServer) FundPool(goCtx context.Context, msg *types.MsgFundPool) (*typ
 	}
 
 	// Emit a fund event.
-	types.EmitFundPoolEvent(ctx, msg)
+	errEmit := ctx.EventManager().EmitTypedEvent(&types.EventFundPool{
+		PoolId:  msg.Id,
+		Address: msg.Creator,
+		Amount:  msg.Amount,
+	})
+	if errEmit != nil {
+		return nil, errEmit
+	}
 
 	// Update and return.
 	pool.TotalFunds += msg.Amount

@@ -31,7 +31,7 @@ func (k Keeper) HandleUploadTimeout(goCtx context.Context) {
 				// reset upgrade plan to default values
 				pool.UpgradePlan = &types.UpgradePlan{}
 			}
-	
+
 			k.SetPool(ctx, pool)
 		}
 
@@ -96,12 +96,25 @@ func (k Keeper) HandleUploadTimeout(goCtx context.Context) {
 				}
 
 				// If consensus wasn't reached, we drop the bundle and emit an event.
-				types.EmitBundleDroppedQuorumNotReachedEvent(ctx, &pool)
+				ctx.EventManager().EmitTypedEvent(&types.EventBundleFinalised{
+					PoolId:       pool.Id,
+					BundleId:     pool.BundleProposal.BundleId,
+					ByteSize:     pool.BundleProposal.ByteSize,
+					Uploader:     pool.BundleProposal.Uploader,
+					NextUploader: pool.BundleProposal.NextUploader,
+					Reward:       0,
+					Valid:        uint64(len(pool.BundleProposal.VotersValid)),
+					Invalid:      uint64(len(pool.BundleProposal.VotersInvalid)),
+					FromHeight:   pool.BundleProposal.FromHeight,
+					ToHeight:     pool.BundleProposal.ToHeight,
+					Status:       types.BUNDLE_STATUS_NO_QUORUM,
+					ToKey:        pool.BundleProposal.ToKey,
+					ToValue:      pool.BundleProposal.ToValue,
+					Id:           0,
+				})
 
 				pool.BundleProposal = &types.BundleProposal{
 					NextUploader: nextUploader,
-					FromHeight:   pool.BundleProposal.FromHeight,
-					ToHeight:     pool.BundleProposal.FromHeight,
 					CreatedAt:    uint64(ctx.BlockTime().Unix()),
 				}
 
@@ -125,7 +138,12 @@ func (k Keeper) HandleUploadTimeout(goCtx context.Context) {
 			slashAmount := k.slashStaker(ctx, &pool, staker.Account, k.TimeoutSlash(ctx))
 
 			// emit slashing event
-			types.EmitSlashEvent(ctx, pool.Id, staker.Account, slashAmount)
+			ctx.EventManager().EmitTypedEvent(&types.EventSlash{
+				PoolId:    pool.Id,
+				Address:   staker.Account,
+				Amount:    slashAmount,
+				SlashType: types.SLASH_TYPE_TIMEOUT,
+			})
 
 			staker, foundStaker = k.GetStaker(ctx, pool.BundleProposal.NextUploader, pool.Id)
 
@@ -138,7 +156,11 @@ func (k Keeper) HandleUploadTimeout(goCtx context.Context) {
 				k.TransferToAddress(ctx, staker.Account, staker.Amount)
 
 				// Emit an unstake event.
-				types.EmitUnstakeEvent(ctx, pool.Id, staker.Account, staker.Amount)
+				ctx.EventManager().EmitTypedEvent(&types.EventUnstakePool{
+					PoolId:  pool.Id,
+					Address: staker.Account,
+					Amount:  staker.Amount,
+				})
 			}
 
 			// Update current lowest staker

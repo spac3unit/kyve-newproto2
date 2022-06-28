@@ -36,11 +36,11 @@ import (
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 
 	// IBC
-	ibc "github.com/cosmos/ibc-go/v2/modules/core"
+	ibc "github.com/cosmos/ibc-go/v3/modules/core"
 
 	// IBC Transfer
-	"github.com/cosmos/ibc-go/v2/modules/apps/transfer"
-	ibctransfertypes "github.com/cosmos/ibc-go/v2/modules/apps/transfer/types"
+	"github.com/cosmos/ibc-go/v3/modules/apps/transfer"
+	ibctransfertypes "github.com/cosmos/ibc-go/v3/modules/apps/transfer/types"
 
 	// Mint
 	"github.com/cosmos/cosmos-sdk/x/mint"

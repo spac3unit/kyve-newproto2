@@ -67,11 +67,11 @@ const (
 )
 
 const (
-	UpdateMetadataEventKey = "UpdateMetadata"
+	UpdateMetadataEventKey   = "UpdateMetadata"
 	UpdateMetadataCommission = "Commission"
-	UpdateMetadataMoniker = "Moniker"
-	UpdateMetadataWebsite = "Website"
-	UpdateMetadataLogo = "Logo"
+	UpdateMetadataMoniker    = "Moniker"
+	UpdateMetadataWebsite    = "Website"
+	UpdateMetadataLogo       = "Logo"
 )
 
 // ============ KV-STORE ===============
@@ -80,56 +80,66 @@ func KeyPrefix(p string) []byte {
 	return []byte(p)
 }
 
-const (
-	PoolKey           = "Pool-value-"
-	PoolCountKey      = "Pool-count-"
-	UnbondingStateKey = "UnbondingState-value-"
-)
+var (
+	PoolKey      = "Pool-value-" // []byte{0,1}
+	PoolCountKey = "Pool-count-" // []byte{0,2}
 
-const (
-	// DelegationEntriesKeyPrefix is the prefix to retrieve all DelegationEntries
-	// refactor to []byte{0x01}
-	DelegationEntriesKeyPrefix = "DelegationEntries/value/"
-	// DelegationPoolDataKeyPrefix is the prefix to retrieve all DelegationPoolData
-	// refactor to []byte{0x02}
-	DelegationPoolDataKeyPrefix = "DelegationPoolData/value/"
-	// DelegatorKeyPrefix is the prefix to retrieve all Delegator
-	// refactor to []byte{0x03}
-	DelegatorKeyPrefix = "Delegator/value/"
-	// FunderKeyPrefix is the prefix to retrieve all Funder
-	// refactor to []byte{0x05}
-	FunderKeyPrefix = "Funder/value/"
-	// ProposalKeyPrefix is the prefix to retrieve all Proposal
-	// refactor to []byte{0x06}
-	ProposalKeyPrefix = "Proposal/value/"
-	// StakerKeyPrefix is the prefix to retrieve all Staker
-	// refactor to []byte{0x08}
-	StakerKeyPrefix = "Staker/value/"
-	// UnbondingEntriesKeyPrefix is the prefix to retrieve all UnbondingEntries
-	// refactor to []byte{0x09}
-	UnbondingEntriesKeyPrefix = "UnbondingEntries/value/"
-	// UnbondingEntriesKeyPrefixByDelegator is the prefix to retrieve all UnbondingEntries
-	// refactor to []byte{0x10}
-	UnbondingEntriesKeyPrefixByDelegator = "UnbondingEntriesByDelegator/value/"
+	// UnbondingStakingQueueStateKey ...
+	UnbondingStakingQueueStateKey = []byte{0, 3}
+
+	// UnbondingDelegationQueueStateKey ...
+	UnbondingDelegationQueueStateKey = []byte{0, 4}
 )
 
 var (
-	// DelegatorKeyPrefixIndex2 is the prefix for a different key order for the DelegatorKeyPrefix
-	DelegatorKeyPrefixIndex2 = []byte{0x04}
+	// StakerKeyPrefix is the prefix to retrieve all Staker
+	StakerKeyPrefix = "Staker/value/" // []byte{0x01}
 
+	// FunderKeyPrefix is the prefix to retrieve all Funder
+	FunderKeyPrefix = "Funder/value/" // []byte{0x02}
+
+	// DelegatorKeyPrefix is the prefix to retrieve all Delegator
+	DelegatorKeyPrefix = "Delegator/value/" // []byte{0x03}
+	// DelegatorKeyPrefixIndex2 is the prefix for a different key order for the DelegatorKeyPrefix
+	DelegatorKeyPrefixIndex2 = []byte{4}
+
+	// DelegationEntriesKeyPrefix is the prefix to retrieve all DelegationEntries
+	DelegationEntriesKeyPrefix = "DelegationEntries/value/" // []byte{0x05}
+
+	// DelegationPoolDataKeyPrefix is the prefix to retrieve all DelegationPoolData
+	DelegationPoolDataKeyPrefix = "DelegationPoolData/value/" // []byte{0x06}
+
+	// ProposalKeyPrefix is the prefix to retrieve all Proposal
+	ProposalKeyPrefix = "Proposal/value/" // []byte{0x07}
 	// ProposalKeyPrefixIndex2 is the prefix for a different key order for the DelegatorKeyPrefix
-	ProposalKeyPrefixIndex2 = []byte{0x08}
+	ProposalKeyPrefixIndex2 = []byte{8, 0}
+	// ProposalKeyPrefixIndex3 is the prefix for a different key order for the DelegatorKeyPrefix
+	ProposalKeyPrefixIndex3 = []byte{8, 1}
+
+	// UnbondingStakingQueueEntryKeyPrefix ...
+	UnbondingStakingQueueEntryKeyPrefix = []byte{9}
+	// UnbondingStakingQueueEntryKeyPrefixIndex2 ...
+	UnbondingStakingQueueEntryKeyPrefixIndex2 = []byte{10}
+	// UnbondingStakerKeyPrefix ...
+	UnbondingStakerKeyPrefix = []byte{11}
+
+	// UnbondingDelegationQueueEntryKeyPrefix ...
+	UnbondingDelegationQueueEntryKeyPrefix = []byte{12}
+	// UnbondingDelegationQueueEntryKeyPrefixIndex2 ...
+	UnbondingDelegationQueueEntryKeyPrefixIndex2 = []byte{13}
 )
 
-// DelegationEntriesKey returns the store Key to retrieve a DelegationEntries from the index fields
-func DelegationEntriesKey(poolId uint64, stakerAddress string, kIndex uint64) []byte {
-	return KeyPrefixBuilder{}.AInt(poolId).AString(stakerAddress).AInt(kIndex).Key
+// StakerKey returns the store Key to retrieve a Staker from the index fields
+func StakerKey(staker string, poolId uint64) []byte {
+	return KeyPrefixBuilder{}.AString(staker).AInt(poolId).Key
 }
 
-// DelegationPoolDataKey returns the store Key to retrieve a DelegationPoolData from the index fields
-func DelegationPoolDataKey(poolId uint64, stakerAddress string) []byte {
-	return KeyPrefixBuilder{}.AInt(poolId).AString(stakerAddress).Key
+// FunderKey returns the store Key to retrieve a Funder from the index fields
+func FunderKey(funder string, poolId uint64) []byte {
+	return KeyPrefixBuilder{}.AString(funder).AInt(poolId).Key
 }
+
+// === DELEGATION ===
 
 // DelegatorKey returns the store Key to retrieve a Delegator from the index fields
 func DelegatorKey(poolId uint64, stakerAddress string, delegatorAddress string) []byte {
@@ -141,34 +151,50 @@ func DelegatorKeyIndex2(delegatorAddress string, poolId uint64, stakerAddress st
 	return KeyPrefixBuilder{}.AString(delegatorAddress).AInt(poolId).AString(stakerAddress).Key
 }
 
-// FunderKey returns the store Key to retrieve a Funder from the index fields
-func FunderKey(funder string, poolId uint64) []byte {
-	return KeyPrefixBuilder{}.AString(funder).AInt(poolId).Key
+// DelegationEntriesKey returns the store Key to retrieve a DelegationEntries from the index fields
+func DelegationEntriesKey(poolId uint64, stakerAddress string, kIndex uint64) []byte {
+	return KeyPrefixBuilder{}.AInt(poolId).AString(stakerAddress).AInt(kIndex).Key
 }
+
+// DelegationPoolDataKey returns the store Key to retrieve a DelegationPoolData from the index fields
+func DelegationPoolDataKey(poolId uint64, stakerAddress string) []byte {
+	return KeyPrefixBuilder{}.AInt(poolId).AString(stakerAddress).Key
+}
+
+// === PROPOSALS ===
 
 // ProposalKey returns the store Key to retrieve a Proposal from the index fields
 func ProposalKey(bundleId string) []byte {
 	return KeyPrefixBuilder{}.AString(bundleId).Key
 }
 
-// ProposalKey returns the store Key to retrieve a Proposal from the index fields
+// ProposalKeyIndex2 ...
 func ProposalKeyIndex2(poolId uint64, fromId uint64) []byte {
 	return KeyPrefixBuilder{}.AInt(poolId).AInt(fromId).Key
 }
 
-// StakerKey returns the store Key to retrieve a Staker from the index fields
-func StakerKey(staker string, poolId uint64) []byte {
+// ProposalKeyIndex3 ...
+func ProposalKeyIndex3(poolId uint64, finalizedAt uint64) []byte {
+	return KeyPrefixBuilder{}.AInt(poolId).AInt(finalizedAt).Key
+}
+
+// === UNBONDING ===
+
+func UnbondingStakingQueueEntryKey(index uint64) []byte {
+	return KeyPrefixBuilder{}.AInt(index).Key
+}
+func UnbondingStakingQueueEntryKeyIndex2(staker string, index uint64) []byte {
+	return KeyPrefixBuilder{}.AString(staker).AInt(index).Key
+}
+
+func UnbondingStakerKey(poolId uint64, staker string) []byte {
 	return KeyPrefixBuilder{}.AString(staker).AInt(poolId).Key
 }
 
-// UnbondingEntriesKey returns the store Key to retrieve a UnbondingEntries from the index fields
-func UnbondingEntriesKey(index uint64) []byte {
+func UnbondingDelegationQueueEntryKey(index uint64) []byte {
 	return KeyPrefixBuilder{}.AInt(index).Key
 }
-
-// UnbondingEntriesByDelegatorKey returns the store Key to retrieve a UnbondingEntries from the index fields
-// Index is still needed to make Key unique
-func UnbondingEntriesByDelegatorKey(delegator string, index uint64) []byte {
+func UnbondingDelegationQueueEntryKeyIndex2(delegator string, index uint64) []byte {
 	return KeyPrefixBuilder{}.AString(delegator).AInt(index).Key
 }
 

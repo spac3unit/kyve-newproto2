@@ -39,7 +39,14 @@ func (k msgServer) StakePool(goCtx context.Context, msg *types.MsgStakePool) (*t
 				}
 
 				// Emit an unstake event.
-				types.EmitUnstakeEvent(ctx, msg.Id, lowestStaker.Account, lowestStaker.Amount)
+				errEmit := ctx.EventManager().EmitTypedEvent(&types.EventUnstakePool{
+					PoolId:  msg.Id,
+					Address: lowestStaker.Account,
+					Amount:  lowestStaker.Amount,
+				})
+				if errEmit != nil {
+					return nil, errEmit
+				}
 
 				// Remove lowest staker.
 				k.removeStaker(ctx, &pool, &lowestStaker)
@@ -72,7 +79,14 @@ func (k msgServer) StakePool(goCtx context.Context, msg *types.MsgStakePool) (*t
 	}
 
 	// Event a stake event.
-	types.EmitStakeEvent(ctx, msg.Creator, msg.Id, msg.Amount)
+	errEmit := ctx.EventManager().EmitTypedEvent(&types.EventStakePool{
+		PoolId:  msg.Id,
+		Address: msg.Creator,
+		Amount:  msg.Amount,
+	})
+	if errEmit != nil {
+		return nil, errEmit
+	}
 
 	// Update and return.
 	pool.TotalStake += msg.Amount

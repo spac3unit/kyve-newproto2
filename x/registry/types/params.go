@@ -46,6 +46,16 @@ var (
 	DefaultMaxPoints uint64 = 5
 )
 
+var (
+	KeyUnbondingStakingTime            = []byte("UnbondingStakingTime")
+	DefaultUnbondingStakingTime uint64 = 60 * 60 * 24 * 5
+)
+
+var (
+	KeyUnbondingDelegationTime            = []byte("UnbondingDelegationTime")
+	DefaultUnbondingDelegationTime uint64 = 60 * 60 * 24 * 5
+)
+
 // ParamKeyTable the param Key table for launch module
 func ParamKeyTable() paramtypes.KeyTable {
 	return paramtypes.NewKeyTable().RegisterParamSet(&Params{})
@@ -60,15 +70,19 @@ func NewParams(
 	storageCost uint64,
 	networkFee string,
 	maxPoints uint64,
+	unbondingStakingTime uint64,
+	unbondingDelegationTime uint64,
 ) Params {
 	return Params{
-		VoteSlash:     voteSlash,
-		UploadSlash:   uploadSlash,
-		TimeoutSlash:  timeoutSlash,
-		UploadTimeout: uploadTimeout,
-		StorageCost:   storageCost,
-		NetworkFee:    networkFee,
-		MaxPoints: maxPoints,
+		VoteSlash:               voteSlash,
+		UploadSlash:             uploadSlash,
+		TimeoutSlash:            timeoutSlash,
+		UploadTimeout:           uploadTimeout,
+		StorageCost:             storageCost,
+		NetworkFee:              networkFee,
+		MaxPoints:               maxPoints,
+		UnbondingStakingTime:    unbondingStakingTime,
+		UnbondingDelegationTime: unbondingDelegationTime,
 	}
 }
 
@@ -82,6 +96,8 @@ func DefaultParams() Params {
 		DefaultStorageCost,
 		DefaultNetworkFee,
 		DefaultMaxPoints,
+		DefaultUnbondingStakingTime,
+		DefaultUnbondingDelegationTime,
 	)
 }
 
@@ -95,6 +111,8 @@ func (p *Params) ParamSetPairs() paramtypes.ParamSetPairs {
 		paramtypes.NewParamSetPair(KeyStorageCost, &p.StorageCost, validateStorageCost),
 		paramtypes.NewParamSetPair(KeyNetworkFee, &p.NetworkFee, validateNetworkFee),
 		paramtypes.NewParamSetPair(KeyMaxPoints, &p.MaxPoints, validateMaxPoints),
+		paramtypes.NewParamSetPair(KeyUnbondingStakingTime, &p.UnbondingStakingTime, validateUnbondingStakingTime),
+		paramtypes.NewParamSetPair(KeyUnbondingDelegationTime, &p.UnbondingDelegationTime, validateUnbondingDelegationTime),
 	}
 }
 
@@ -125,6 +143,14 @@ func (p Params) Validate() error {
 	}
 
 	if err := validateMaxPoints(p.MaxPoints); err != nil {
+		return err
+	}
+
+	if err := validateUnbondingStakingTime(p.UnbondingStakingTime); err != nil {
+		return err
+	}
+
+	if err := validateUnbondingDelegationTime(p.UnbondingDelegationTime); err != nil {
 		return err
 	}
 
@@ -192,6 +218,26 @@ func validateMaxPoints(v interface{}) error {
 
 	// TODO implement validation
 	_ = maxPoints
+
+	return nil
+}
+
+// validateMaxPoints validates the MaxPoints param
+func validateUnbondingStakingTime(v interface{}) error {
+	_, ok := v.(uint64)
+	if !ok {
+		return fmt.Errorf("invalid parameter type: %T", v)
+	}
+
+	return nil
+}
+
+// validateMaxPoints validates the MaxPoints param
+func validateUnbondingDelegationTime(v interface{}) error {
+	_, ok := v.(uint64)
+	if !ok {
+		return fmt.Errorf("invalid parameter type: %T", v)
+	}
 
 	return nil
 }

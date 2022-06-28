@@ -46,7 +46,17 @@ func (k msgServer) UpdateMetadata(
 	k.SetStaker(ctx, staker)
 
 	// Event an event.
-	types.EmitUpdateMetadata(ctx, msg.Creator, msg.Id, msg.Commission, msg.Moniker, msg.Website, msg.Logo)
+	errEmit := ctx.EventManager().EmitTypedEvent(&types.EventUpdateMetadata{
+		PoolId:     msg.Id,
+		Address:    msg.Creator,
+		Commission: msg.Commission,
+		Moniker:    msg.Moniker,
+		Website:    msg.Website,
+		Logo:       msg.Logo,
+	})
+	if errEmit != nil {
+		return nil, errEmit
+	}
 
 	return &types.MsgUpdateMetadataResponse{}, nil
 }

@@ -43,10 +43,12 @@ var (
 	ErrMaxBundleSize   = sdkerrors.Register(ModuleName, 1120, "bundle size is too high")
 	ErrPoolCurrentlyUpgrading   = sdkerrors.Register(ModuleName, 1121, "pool currently upgrading")
 	ErrPoolNoUpgradeScheduled   = sdkerrors.Register(ModuleName, 1122, "pool has no scheduled upgrade")
+	ErrToHeight   = sdkerrors.Register(ModuleName, 1123, "invalid to height")
+	ErrFromKey   = sdkerrors.Register(ModuleName, 1124, "invalid from key")
 )
 
 // delegation errors
 var (
-	ErrNotADelegator       = sdkerrors.Register(ModuleName, 1123, "not a delegator")
-	ErrNotEnoughDelegation = sdkerrors.Register(ModuleName, 1124, "undelegate-amount is larger than current delegation")
+	ErrNotADelegator       = sdkerrors.Register(ModuleName, 1125, "not a delegator")
+	ErrNotEnoughDelegation = sdkerrors.Register(ModuleName, 1126, "undelegate-amount is larger than current delegation")
 )

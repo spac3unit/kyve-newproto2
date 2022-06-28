@@ -1,0 +1,184 @@
+syntax = "proto3";
+
+package kyve.registry.v1beta1;
+
+import "gogoproto/gogo.proto";
+import "kyve/registry/v1beta1/tx.proto";
+
+option go_package = "github.com/KYVENetwork/chain/x/registry/types";
+
+// BundleStatus ...
+enum BundleStatus {
+  option (gogoproto.goproto_enum_prefix) = false;
+
+  // BUNDLE_STATUS_UNSPECIFIED ...
+  BUNDLE_STATUS_UNSPECIFIED = 0;
+  // BUNDLE_STATUS_VALID ...
+  BUNDLE_STATUS_VALID = 1;
+  // BUNDLE_STATUS_INVALID ...
+  BUNDLE_STATUS_INVALID = 2;
+  // BUNDLE_STATUS_NO_FUNDS ...
+  BUNDLE_STATUS_NO_FUNDS = 3;
+  // BUNDLE_STATUS_NO_QUORUM ...
+  BUNDLE_STATUS_NO_QUORUM = 4;
+}
+
+// SlashType ...
+enum SlashType {
+  option (gogoproto.goproto_enum_prefix) = false;
+
+  // SLASH_TYPE_UNSPECIFIED ...
+  SLASH_TYPE_UNSPECIFIED = 0;
+  // SLASH_TYPE_TIMEOUT ...
+  SLASH_TYPE_TIMEOUT = 1;
+  // SLASH_TYPE_VOTE ...
+  SLASH_TYPE_VOTE = 2;
+  // SLASH_TYPE_UPLOAD ...
+  SLASH_TYPE_UPLOAD = 3;
+}
+
+// ---------- Bundle Events ----------
+
+// EventBundleFinalised is an event emitted when a bundle is finalised.
+message EventBundleFinalised {
+  // pool_id is the unique ID of the pool.
+  uint64 pool_id = 1;
+  // bundle_id ...
+  string bundle_id = 2;
+  // byte_size ...
+  uint64 byte_size = 3;
+  // uploader ...
+  string uploader = 4;
+  // next_uploader ...
+  string next_uploader = 5;
+  // reward ...
+  uint64 reward = 6;
+  // valid ...
+  uint64 valid = 7;
+  // invalid ...
+  uint64 invalid = 8;
+  // from_height ...
+  uint64 from_height = 9;
+  // to_height ...
+  uint64 to_height = 10;
+  // status ...
+  BundleStatus status = 11;
+  // to_key ...
+  string to_key = 12;
+  // to_value ...
+  string to_value = 13;
+  // id ...
+  uint64 id = 14;
+}
+
+// EventBundleVote is an event emitted when a protocol node votes on a bundle.
+message EventBundleVote {
+  // pool_id is the unique ID of the pool.
+  uint64 pool_id = 1;
+  // address is the account address of the protocol node.
+  string address = 2;
+  // bundle_id is the unique ID of the bundle.
+  string bundle_id = 3;
+  // vote is the vote type of the protocol node.
+  VoteType vote = 4;
+}
+
+// ---------- Delegating Events ----------
+
+// EventDelegatePool is an event emitted when someone delegates to a protocol node.
+message EventDelegatePool {
+  // pool_id is the unique ID of the pool.
+  uint64 pool_id = 1;
+  // address is the account address of the delegator.
+  string address = 2;
+  // node is the account address of the protocol node.
+  string node = 3;
+  // amount ...
+  uint64 amount = 4;
+}
+
+// EventUndelegatePool is an event emitted when someone undelegates from a protocol node.
+message EventUndelegatePool {
+  // pool_id is the unique ID of the pool.
+  uint64 pool_id = 1;
+  // address is the account address of the delegator.
+  string address = 2;
+  // node is the account address of the protocol node.
+  string node = 3;
+  // amount ...
+  uint64 amount = 4;
+}
+
+// ---------- Funding Events ----------
+
+// EventFundPool is an event emitted when a pool is funded.
+message EventFundPool {
+  // pool_id is the unique ID of the pool.
+  uint64 pool_id = 1;
+  // address is the account address of the pool funder.
+  string address = 2;
+  // amount ...
+  uint64 amount = 3;
+}
+
+// EventDefundPool is an event emitted when a pool is defunded.
+message EventDefundPool {
+  // pool_id is the unique ID of the pool.
+  uint64 pool_id = 1;
+  // address is the account address of the pool funder.
+  string address = 2;
+  // amount ...
+  uint64 amount = 3;
+}
+
+// ---------- Protocol Node Events ----------
+
+// EventSlash is an event emitted when a protocol node is slashed.
+message EventSlash {
+  // pool_id is the unique ID of the pool.
+  uint64 pool_id = 1;
+  // address is the account address of the protocol node.
+  string address = 2;
+  // amount ...
+  uint64 amount = 3;
+  // slash_type
+  SlashType slash_type = 4;
+}
+
+// EventUpdateMetadata is an event emitted when a protocol node updates their metadata.
+message EventUpdateMetadata {
+  // pool_id is the unique ID of the pool.
+  uint64 pool_id = 1;
+  // address is the account address of the protocol node.
+  string address = 2;
+  // commission ...
+  string commission = 3;
+  // moniker ...
+  string moniker = 4;
+  // website ...
+  string website = 5;
+  // logo ...
+  string logo = 6;
+}
+
+// ---------- Staking Events ----------
+
+// EventStakePool is an event emitted when a protocol node stakes in a pool.
+message EventStakePool {
+  // pool_id is the unique ID of the pool.
+  uint64 pool_id = 1;
+  // address is the account address of the protocol node.
+  string address = 2;
+  // amount ...
+  uint64 amount = 3;
+}
+
+// EventUnstakePool is an event emitted when a protocol node unstakes from a pool.
+message EventUnstakePool {
+  // pool_id is the unique ID of the pool.
+  uint64 pool_id = 1;
+  // address is the account address of the protocol node.
+  string address = 2;
+  // amount ...
+  uint64 amount = 3;
+}

@@ -107,7 +107,12 @@ func CmdSubmitCreatePoolProposal() *cobra.Command {
 
 			content := types.NewCreatePoolProposal(title, description, args[0], args[1], args[2], args[3], startHeight, uploadInterval, operatingCost, maxBundleSize, args[8], args[9])
 
-			msg, err := govtypes.NewMsgSubmitProposal(content, deposit, from)
+			isExpedited, err := cmd.Flags().GetBool(cli.FlagIsExpedited)
+			if err != nil {
+				return err
+			}
+
+			msg, err := govtypes.NewMsgSubmitProposal(content, deposit, from, isExpedited)
 			if err != nil {
 				return err
 			}
@@ -120,9 +125,10 @@ func CmdSubmitCreatePoolProposal() *cobra.Command {
 		},
 	}
 
-	cmd.Flags().String(cli.FlagTitle, "", "title of proposal")
-	cmd.Flags().String(cli.FlagDescription, "", "description of proposal")
-	cmd.Flags().String(cli.FlagDeposit, "", "deposit of proposal")
+	cmd.Flags().String(cli.FlagTitle, "", "The proposal title")
+	cmd.Flags().String(cli.FlagDescription, "", "The proposal description")
+	cmd.Flags().Bool(cli.FlagIsExpedited, false, "If true, makes the proposal an expedited one")
+	cmd.Flags().String(cli.FlagDeposit, "", "The proposal deposit")
 	_ = cmd.MarkFlagRequired(cli.FlagTitle)
 	_ = cmd.MarkFlagRequired(cli.FlagDescription)
 
@@ -183,7 +189,12 @@ func CmdSubmitUpdatePoolProposal() *cobra.Command {
 
 			content := types.NewUpdatePoolProposal(title, description, id, args[1], args[2], args[3], args[4], uploadInterval, operatingCost, maxBundleSize)
 
-			msg, err := govtypes.NewMsgSubmitProposal(content, deposit, from)
+			isExpedited, err := cmd.Flags().GetBool(cli.FlagIsExpedited)
+			if err != nil {
+				return err
+			}
+
+			msg, err := govtypes.NewMsgSubmitProposal(content, deposit, from, isExpedited)
 			if err != nil {
 				return err
 			}
@@ -196,9 +207,10 @@ func CmdSubmitUpdatePoolProposal() *cobra.Command {
 		},
 	}
 
-	cmd.Flags().String(cli.FlagTitle, "", "title of proposal")
-	cmd.Flags().String(cli.FlagDescription, "", "description of proposal")
-	cmd.Flags().String(cli.FlagDeposit, "", "deposit of proposal")
+	cmd.Flags().String(cli.FlagTitle, "", "The proposal title")
+	cmd.Flags().String(cli.FlagDescription, "", "The proposal description")
+	cmd.Flags().Bool(cli.FlagIsExpedited, false, "If true, makes the proposal an expedited one")
+	cmd.Flags().String(cli.FlagDeposit, "", "The proposal deposit")
 	_ = cmd.MarkFlagRequired(cli.FlagTitle)
 	_ = cmd.MarkFlagRequired(cli.FlagDescription)
 
@@ -244,7 +256,12 @@ func CmdSubmitPausePoolProposal() *cobra.Command {
 
 			content := types.NewPausePoolProposal(title, description, id)
 
-			msg, err := govtypes.NewMsgSubmitProposal(content, deposit, from)
+			isExpedited, err := cmd.Flags().GetBool(cli.FlagIsExpedited)
+			if err != nil {
+				return err
+			}
+
+			msg, err := govtypes.NewMsgSubmitProposal(content, deposit, from, isExpedited)
 			if err != nil {
 				return err
 			}
@@ -257,9 +274,10 @@ func CmdSubmitPausePoolProposal() *cobra.Command {
 		},
 	}
 
-	cmd.Flags().String(cli.FlagTitle, "", "title of proposal")
-	cmd.Flags().String(cli.FlagDescription, "", "description of proposal")
-	cmd.Flags().String(cli.FlagDeposit, "", "deposit of proposal")
+	cmd.Flags().String(cli.FlagTitle, "", "The proposal title")
+	cmd.Flags().String(cli.FlagDescription, "", "The proposal description")
+	cmd.Flags().Bool(cli.FlagIsExpedited, false, "If true, makes the proposal an expedited one")
+	cmd.Flags().String(cli.FlagDeposit, "", "The proposal deposit")
 	_ = cmd.MarkFlagRequired(cli.FlagTitle)
 	_ = cmd.MarkFlagRequired(cli.FlagDescription)
 
@@ -305,7 +323,12 @@ func CmdSubmitUnpausePoolProposal() *cobra.Command {
 
 			content := types.NewUnpausePoolProposal(title, description, id)
 
-			msg, err := govtypes.NewMsgSubmitProposal(content, deposit, from)
+			isExpedited, err := cmd.Flags().GetBool(cli.FlagIsExpedited)
+			if err != nil {
+				return err
+			}
+
+			msg, err := govtypes.NewMsgSubmitProposal(content, deposit, from, isExpedited)
 			if err != nil {
 				return err
 			}
@@ -318,9 +341,10 @@ func CmdSubmitUnpausePoolProposal() *cobra.Command {
 		},
 	}
 
-	cmd.Flags().String(cli.FlagTitle, "", "title of proposal")
-	cmd.Flags().String(cli.FlagDescription, "", "description of proposal")
-	cmd.Flags().String(cli.FlagDeposit, "", "deposit of proposal")
+	cmd.Flags().String(cli.FlagTitle, "", "The proposal title")
+	cmd.Flags().String(cli.FlagDescription, "", "The proposal description")
+	cmd.Flags().Bool(cli.FlagIsExpedited, false, "If true, makes the proposal an expedited one")
+	cmd.Flags().String(cli.FlagDeposit, "", "The proposal deposit")
 	_ = cmd.MarkFlagRequired(cli.FlagTitle)
 	_ = cmd.MarkFlagRequired(cli.FlagDescription)
 
@@ -371,7 +395,12 @@ func CmdSubmitSchedulePoolUpgradeProposal() *cobra.Command {
 
 			content := types.NewSchedulePoolUpgradeProposal(title, description, args[0], args[1], scheduledAt, duration, args[4])
 
-			msg, err := govtypes.NewMsgSubmitProposal(content, deposit, from)
+			isExpedited, err := cmd.Flags().GetBool(cli.FlagIsExpedited)
+			if err != nil {
+				return err
+			}
+
+			msg, err := govtypes.NewMsgSubmitProposal(content, deposit, from, isExpedited)
 			if err != nil {
 				return err
 			}
@@ -384,9 +413,10 @@ func CmdSubmitSchedulePoolUpgradeProposal() *cobra.Command {
 		},
 	}
 
-	cmd.Flags().String(cli.FlagTitle, "", "title of proposal")
-	cmd.Flags().String(cli.FlagDescription, "", "description of proposal")
-	cmd.Flags().String(cli.FlagDeposit, "", "deposit of proposal")
+	cmd.Flags().String(cli.FlagTitle, "", "The proposal title")
+	cmd.Flags().String(cli.FlagDescription, "", "The proposal description")
+	cmd.Flags().Bool(cli.FlagIsExpedited, false, "If true, makes the proposal an expedited one")
+	cmd.Flags().String(cli.FlagDeposit, "", "The proposal deposit")
 	_ = cmd.MarkFlagRequired(cli.FlagTitle)
 	_ = cmd.MarkFlagRequired(cli.FlagDescription)
 
@@ -427,7 +457,12 @@ func CmdSubmitCancelPoolUpgradeProposal() *cobra.Command {
 
 			content := types.NewCancelPoolUpgradeProposal(title, description, args[0])
 
-			msg, err := govtypes.NewMsgSubmitProposal(content, deposit, from)
+			isExpedited, err := cmd.Flags().GetBool(cli.FlagIsExpedited)
+			if err != nil {
+				return err
+			}
+
+			msg, err := govtypes.NewMsgSubmitProposal(content, deposit, from, isExpedited)
 			if err != nil {
 				return err
 			}
@@ -440,9 +475,10 @@ func CmdSubmitCancelPoolUpgradeProposal() *cobra.Command {
 		},
 	}
 
-	cmd.Flags().String(cli.FlagTitle, "", "title of proposal")
-	cmd.Flags().String(cli.FlagDescription, "", "description of proposal")
-	cmd.Flags().String(cli.FlagDeposit, "", "deposit of proposal")
+	cmd.Flags().String(cli.FlagTitle, "", "The proposal title")
+	cmd.Flags().String(cli.FlagDescription, "", "The proposal description")
+	cmd.Flags().Bool(cli.FlagIsExpedited, false, "If true, makes the proposal an expedited one")
+	cmd.Flags().String(cli.FlagDeposit, "", "The proposal deposit")
 	_ = cmd.MarkFlagRequired(cli.FlagTitle)
 	_ = cmd.MarkFlagRequired(cli.FlagDescription)
 

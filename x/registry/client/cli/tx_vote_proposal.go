@@ -38,7 +38,7 @@ func CmdVoteProposal() *cobra.Command {
 				clientCtx.GetFromAddress().String(),
 				argId,
 				argBundleId,
-				argVote,
+				types.VoteType(argVote),
 			)
 			if err := msg.ValidateBasic(); err != nil {
 				return err

@@ -13,20 +13,21 @@ import (
 )
 
 type CreatePoolRequest struct {
-	BaseReq       rest.BaseReq `json:"base_req" yaml:"base_req"`
-	Title         string       `json:"title" yaml:"title"`
-	Description   string       `json:"description" yaml:"description"`
-	Deposit       sdk.Coins    `json:"deposit" yaml:"deposit"`
-	Name          string       `json:"name" yaml:"name"`
-	Runtime       string       `json:"runtime" yaml:"runtime"`
-	Logo          string       `json:"logo" yaml:"logo"`
-	Config        string       `json:"config" yaml:"config"`
-	StartHeight   uint64       `json:"startHeight" yaml:"startHeight"`
+	BaseReq        rest.BaseReq `json:"base_req" yaml:"base_req"`
+	Title          string       `json:"title" yaml:"title"`
+	Description    string       `json:"description" yaml:"description"`
+	IsExpedited    bool         `json:"is_expedited" yaml:"is_expedited"`
+	Deposit        sdk.Coins    `json:"deposit" yaml:"deposit"`
+	Name           string       `json:"name" yaml:"name"`
+	Runtime        string       `json:"runtime" yaml:"runtime"`
+	Logo           string       `json:"logo" yaml:"logo"`
+	Config         string       `json:"config" yaml:"config"`
+	StartHeight    uint64       `json:"startHeight" yaml:"startHeight"`
 	UploadInterval uint64       `json:"uploadInterval" yaml:"uploadInterval"`
-	OperatingCost uint64       `json:"operatingCost" yaml:"operatingCost"`
-	MaxBundleSize uint64       `json:"maxBundleSize" yaml:"maxBundleSize"`
-	Version          string       `json:"version" yaml:"version"`
-	Binaries          string       `json:"binaries" yaml:"binaries"`
+	OperatingCost  uint64       `json:"operatingCost" yaml:"operatingCost"`
+	MaxBundleSize  uint64       `json:"maxBundleSize" yaml:"maxBundleSize"`
+	Version        string       `json:"version" yaml:"version"`
+	Binaries       string       `json:"binaries" yaml:"binaries"`
 }
 
 func ProposalCreatePoolRESTHandler(clientCtx client.Context) govrest.ProposalRESTHandler {
@@ -55,7 +56,7 @@ func newCreatePoolHandler(clientCtx client.Context) http.HandlerFunc {
 		}
 
 		content := types.NewCreatePoolProposal(req.Title, req.Description, req.Name, req.Runtime, req.Logo, req.Config, req.StartHeight, req.UploadInterval, req.OperatingCost, req.MaxBundleSize, req.Version, req.Binaries)
-		msg, err := govtypes.NewMsgSubmitProposal(content, req.Deposit, fromAddr)
+		msg, err := govtypes.NewMsgSubmitProposal(content, req.Deposit, fromAddr, req.IsExpedited)
 		if rest.CheckBadRequestError(w, err) {
 			return
 		}
@@ -68,18 +69,19 @@ func newCreatePoolHandler(clientCtx client.Context) http.HandlerFunc {
 }
 
 type UpdatePoolRequest struct {
-	BaseReq       rest.BaseReq `json:"base_req" yaml:"base_req"`
-	Title         string       `json:"title" yaml:"title"`
-	Description   string       `json:"description" yaml:"description"`
-	Deposit       sdk.Coins    `json:"deposit" yaml:"deposit"`
-	Id            uint64       `json:"id" yaml:"id"`
-	Name          string       `json:"name" yaml:"name"`
-	Runtime       string       `json:"runtime" yaml:"runtime"`
-	Logo          string       `json:"logo" yaml:"logo"`
-	Config        string       `json:"config" yaml:"config"`
+	BaseReq        rest.BaseReq `json:"base_req" yaml:"base_req"`
+	Title          string       `json:"title" yaml:"title"`
+	Description    string       `json:"description" yaml:"description"`
+	IsExpedited    bool         `json:"is_expedited" yaml:"is_expedited"`
+	Deposit        sdk.Coins    `json:"deposit" yaml:"deposit"`
+	Id             uint64       `json:"id" yaml:"id"`
+	Name           string       `json:"name" yaml:"name"`
+	Runtime        string       `json:"runtime" yaml:"runtime"`
+	Logo           string       `json:"logo" yaml:"logo"`
+	Config         string       `json:"config" yaml:"config"`
 	UploadInterval uint64       `json:"uploadInterval" yaml:"uploadInterval"`
-	OperatingCost uint64       `json:"operatingCost" yaml:"operatingCost"`
-	MaxBundleSize uint64       `json:"maxBundleSize" yaml:"maxBundleSize"`
+	OperatingCost  uint64       `json:"operatingCost" yaml:"operatingCost"`
+	MaxBundleSize  uint64       `json:"maxBundleSize" yaml:"maxBundleSize"`
 }
 
 func ProposalUpdatePoolRESTHandler(clientCtx client.Context) govrest.ProposalRESTHandler {
@@ -108,7 +110,7 @@ func newUpdatePoolHandler(clientCtx client.Context) http.HandlerFunc {
 		}
 
 		content := types.NewUpdatePoolProposal(req.Title, req.Description, req.Id, req.Name, req.Runtime, req.Logo, req.Config, req.UploadInterval, req.OperatingCost, req.MaxBundleSize)
-		msg, err := govtypes.NewMsgSubmitProposal(content, req.Deposit, fromAddr)
+		msg, err := govtypes.NewMsgSubmitProposal(content, req.Deposit, fromAddr, req.IsExpedited)
 		if rest.CheckBadRequestError(w, err) {
 			return
 		}
@@ -124,6 +126,7 @@ type PausePoolRequest struct {
 	BaseReq     rest.BaseReq `json:"base_req" yaml:"base_req"`
 	Title       string       `json:"title" yaml:"title"`
 	Description string       `json:"description" yaml:"description"`
+	IsExpedited bool         `json:"is_expedited" yaml:"is_expedited"`
 	Deposit     sdk.Coins    `json:"deposit" yaml:"deposit"`
 	Id          uint64       `json:"id" yaml:"id"`
 }
@@ -154,7 +157,7 @@ func newPausePoolHandler(clientCtx client.Context) http.HandlerFunc {
 		}
 
 		content := types.NewPausePoolProposal(req.Title, req.Description, req.Id)
-		msg, err := govtypes.NewMsgSubmitProposal(content, req.Deposit, fromAddr)
+		msg, err := govtypes.NewMsgSubmitProposal(content, req.Deposit, fromAddr, req.IsExpedited)
 		if rest.CheckBadRequestError(w, err) {
 			return
 		}
@@ -170,6 +173,7 @@ type UnpausePoolRequest struct {
 	BaseReq     rest.BaseReq `json:"base_req" yaml:"base_req"`
 	Title       string       `json:"title" yaml:"title"`
 	Description string       `json:"description" yaml:"description"`
+	IsExpedited bool         `json:"is_expedited" yaml:"is_expedited"`
 	Deposit     sdk.Coins    `json:"deposit" yaml:"deposit"`
 	Id          uint64       `json:"id" yaml:"id"`
 }
@@ -200,7 +204,7 @@ func newUnpausePoolHandler(clientCtx client.Context) http.HandlerFunc {
 		}
 
 		content := types.NewUnpausePoolProposal(req.Title, req.Description, req.Id)
-		msg, err := govtypes.NewMsgSubmitProposal(content, req.Deposit, fromAddr)
+		msg, err := govtypes.NewMsgSubmitProposal(content, req.Deposit, fromAddr, req.IsExpedited)
 		if rest.CheckBadRequestError(w, err) {
 			return
 		}
@@ -216,12 +220,13 @@ type SchedulePoolUpgradeRequest struct {
 	BaseReq     rest.BaseReq `json:"base_req" yaml:"base_req"`
 	Title       string       `json:"title" yaml:"title"`
 	Description string       `json:"description" yaml:"description"`
+	IsExpedited bool         `json:"is_expedited" yaml:"is_expedited"`
 	Deposit     sdk.Coins    `json:"deposit" yaml:"deposit"`
-	Runtime          string       `json:"runtime" yaml:"runtime"`
-	Version          string       `json:"version" yaml:"version"`
-	ScheduledAt          uint64       `json:"scheduled_at" yaml:"scheduled_at"`
-	Duration          uint64       `json:"duration" yaml:"duration"`
-	Binaries          string       `json:"binaries" yaml:"binaries"`
+	Runtime     string       `json:"runtime" yaml:"runtime"`
+	Version     string       `json:"version" yaml:"version"`
+	ScheduledAt uint64       `json:"scheduled_at" yaml:"scheduled_at"`
+	Duration    uint64       `json:"duration" yaml:"duration"`
+	Binaries    string       `json:"binaries" yaml:"binaries"`
 }
 
 func ProposalSchedulePoolUpgradeRESTHandler(clientCtx client.Context) govrest.ProposalRESTHandler {
@@ -250,7 +255,7 @@ func newSchedulePoolUpgradeHandler(clientCtx client.Context) http.HandlerFunc {
 		}
 
 		content := types.NewSchedulePoolUpgradeProposal(req.Title, req.Description, req.Runtime, req.Version, req.ScheduledAt, req.Duration, req.Binaries)
-		msg, err := govtypes.NewMsgSubmitProposal(content, req.Deposit, fromAddr)
+		msg, err := govtypes.NewMsgSubmitProposal(content, req.Deposit, fromAddr, req.IsExpedited)
 		if rest.CheckBadRequestError(w, err) {
 			return
 		}
@@ -266,8 +271,9 @@ type CancelPoolUpgradeRequest struct {
 	BaseReq     rest.BaseReq `json:"base_req" yaml:"base_req"`
 	Title       string       `json:"title" yaml:"title"`
 	Description string       `json:"description" yaml:"description"`
+	IsExpedited bool         `json:"is_expedited" yaml:"is_expedited"`
 	Deposit     sdk.Coins    `json:"deposit" yaml:"deposit"`
-	Runtime          string       `json:"runtime" yaml:"runtime"`
+	Runtime     string       `json:"runtime" yaml:"runtime"`
 }
 
 func ProposalCancelPoolUpgradeRESTHandler(clientCtx client.Context) govrest.ProposalRESTHandler {
@@ -296,7 +302,7 @@ func newCancelPoolUpgradeHandler(clientCtx client.Context) http.HandlerFunc {
 		}
 
 		content := types.NewCancelPoolUpgradeProposal(req.Title, req.Description, req.Runtime)
-		msg, err := govtypes.NewMsgSubmitProposal(content, req.Deposit, fromAddr)
+		msg, err := govtypes.NewMsgSubmitProposal(content, req.Deposit, fromAddr, req.IsExpedited)
 		if rest.CheckBadRequestError(w, err) {
 			return
 		}

@@ -37,14 +37,9 @@ func handleCreatePoolProposal(ctx sdk.Context, k keeper.Keeper, p *types.CreateP
 		Runtime:        p.Runtime,
 		Logo:           p.Logo,
 		Config:         p.Config,
-		HeightArchived: p.StartHeight,
-		StartHeight:    p.StartHeight,
 		UploadInterval: p.UploadInterval,
 		OperatingCost:  p.OperatingCost,
-		BundleProposal: &types.BundleProposal{
-			FromHeight: p.StartHeight,
-			ToHeight:   p.StartHeight,
-		},
+		BundleProposal: &types.BundleProposal{},
 		MaxBundleSize: p.MaxBundleSize,
 		Protocol: &types.Protocol{
 			Version: p.Version,
@@ -52,6 +47,7 @@ func handleCreatePoolProposal(ctx sdk.Context, k keeper.Keeper, p *types.CreateP
 			Binaries: p.Binaries,
 		},
 		UpgradePlan: &types.UpgradePlan{},
+		StartKey: p.StartKey,
 	}
 
 	k.AppendPool(ctx, pool)

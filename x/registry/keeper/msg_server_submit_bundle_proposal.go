@@ -53,24 +53,46 @@ func (k msgServer) SubmitBundleProposal(
 		return nil, types.ErrInvalidArgs
 	}
 
+	// Get current height from where the bundle proposal should resume
+	current_height := pool.CurrentHeight
+
+	if pool.BundleProposal.ToHeight != 0 {
+		current_height = pool.BundleProposal.ToHeight
+	}
+
 	// Validate from height
-	if msg.FromHeight != pool.BundleProposal.ToHeight {
+	if msg.FromHeight != current_height {
 		return nil, types.ErrFromHeight
 	}
 
-	// Validate bundle size
-	if msg.BundleSize > pool.MaxBundleSize {
+	// Validate to height
+	if msg.ToHeight < current_height {
+		return nil, types.ErrToHeight
+	}
+
+	if msg.ToHeight-current_height > pool.MaxBundleSize {
 		return nil, types.ErrMaxBundleSize
 	}
 
-	// Check if upload_interval has been surpassed
-	if uint64(ctx.BlockTime().Unix()) < (pool.BundleProposal.CreatedAt + pool.UploadInterval) {
-		return nil, types.ErrUploadInterval
+	current_key := pool.CurrentKey
+
+	if pool.BundleProposal.ToKey != "" {
+		current_key = pool.BundleProposal.ToKey
+	}
+
+	// Validate from key
+	if msg.FromKey != current_key {
+		return nil, types.ErrFromKey
 	}
 
 	// Check if the sender is the designated uploader.
 	if pool.BundleProposal.NextUploader != msg.Creator {
 		return nil, types.ErrNotDesignatedUploader
+	}
+
+	// Check if upload_interval has been surpassed
+	if uint64(ctx.BlockTime().Unix()) < (pool.BundleProposal.CreatedAt + pool.UploadInterval) {
+		return nil, types.ErrUploadInterval
 	}
 
 	// EVALUATE PREVIOUS ROUND
@@ -88,12 +110,21 @@ func (k msgServer) SubmitBundleProposal(
 	// Check args of bundle types
 	if strings.HasPrefix(msg.BundleId, types.KYVE_NO_DATA_BUNDLE) {
 		// Validate bundle args
-		if msg.BundleSize != 0 || msg.ByteSize != 0 {
+		if msg.ToHeight != current_height || msg.ByteSize != 0 {
+			return nil, types.ErrInvalidArgs
+		}
+
+		// Validate key values
+		if msg.ToKey != "" || msg.ToValue != "" {
 			return nil, types.ErrInvalidArgs
 		}
 	} else {
-		// Validate bundle args
-		if msg.BundleSize == 0 || msg.ByteSize == 0 {
+		if msg.ToHeight <= current_height || msg.ByteSize == 0 {
+			return nil, types.ErrInvalidArgs
+		}
+
+		// Validate key values
+		if msg.ToKey == "" || msg.ToValue == "" {
 			return nil, types.ErrInvalidArgs
 		}
 	}
@@ -105,9 +136,10 @@ func (k msgServer) SubmitBundleProposal(
 			NextUploader: k.getNextUploaderByRandom(ctx, &pool, pool.Stakers),
 			BundleId:     msg.BundleId,
 			ByteSize:     msg.ByteSize,
-			FromHeight:   pool.BundleProposal.ToHeight,
-			ToHeight:     pool.BundleProposal.ToHeight + msg.BundleSize,
+			ToHeight:     msg.ToHeight,
 			CreatedAt:    uint64(ctx.BlockTime().Unix()),
+			ToKey:        msg.ToKey,
+			ToValue:      msg.ToValue,
 		}
 
 		k.SetPool(ctx, pool)
@@ -193,7 +225,14 @@ func (k msgServer) SubmitBundleProposal(
 					slashedFunds += funder.Amount
 
 					// Emit a defund event.
-					types.EmitDefundPoolEvent(ctx, msg.Id, funder.Account, funder.Amount)
+					errEmit := ctx.EventManager().EmitTypedEvent(&types.EventDefundPool{
+						PoolId:  msg.Id,
+						Address: funder.Account,
+						Amount:  funder.Amount,
+					})
+					if errEmit != nil {
+						return nil, errEmit
+					}
 				}
 			}
 
@@ -220,17 +259,36 @@ func (k msgServer) SubmitBundleProposal(
 					NextUploader:  pool.BundleProposal.NextUploader,
 					BundleId:      pool.BundleProposal.BundleId,
 					ByteSize:      pool.BundleProposal.ByteSize,
-					FromHeight:    pool.BundleProposal.FromHeight,
 					ToHeight:      pool.BundleProposal.ToHeight,
 					CreatedAt:     uint64(ctx.BlockTime().Unix()),
 					VotersValid:   pool.BundleProposal.VotersValid,
 					VotersInvalid: pool.BundleProposal.VotersInvalid,
+					ToKey:         pool.BundleProposal.ToKey,
+					ToValue:       pool.BundleProposal.ToValue,
 				}
 
 				k.SetPool(ctx, pool)
 
 				// Emit a bundle dropped event because of insufficient funds.
-				types.EmitBundleDroppedInsufficientFundsEvent(ctx, &pool)
+				errEmit := ctx.EventManager().EmitTypedEvent(&types.EventBundleFinalised{
+					PoolId:       pool.Id,
+					BundleId:     pool.BundleProposal.BundleId,
+					ByteSize:     pool.BundleProposal.ByteSize,
+					Uploader:     pool.BundleProposal.Uploader,
+					NextUploader: pool.BundleProposal.NextUploader,
+					Reward:       0,
+					Valid:        uint64(len(pool.BundleProposal.VotersValid)),
+					Invalid:      uint64(len(pool.BundleProposal.VotersInvalid)),
+					FromHeight:   pool.BundleProposal.FromHeight,
+					ToHeight:     pool.BundleProposal.ToHeight,
+					Status:       types.BUNDLE_STATUS_NO_FUNDS,
+					ToKey:        pool.BundleProposal.ToKey,
+					ToValue:      pool.BundleProposal.ToValue,
+					Id:           0,
+				})
+				if errEmit != nil {
+					return nil, errEmit
+				}
 
 				return &types.MsgSubmitBundleProposalResponse{}, nil
 			}
@@ -270,7 +328,16 @@ func (k msgServer) SubmitBundleProposal(
 		// Partially slash all nodes who voted incorrectly.
 		for _, voter := range pool.BundleProposal.VotersInvalid {
 			slashAmount := k.slashStaker(ctx, &pool, voter, k.VoteSlash(ctx))
-			types.EmitSlashEvent(ctx, pool.Id, voter, slashAmount)
+
+			errEmit := ctx.EventManager().EmitTypedEvent(&types.EventSlash{
+				PoolId:    pool.Id,
+				Address:   voter,
+				Amount:    slashAmount,
+				SlashType: types.SLASH_TYPE_VOTE,
+			})
+			if errEmit != nil {
+				return nil, errEmit
+			}
 		}
 
 		// Send payout to treasury.
@@ -285,14 +352,47 @@ func (k msgServer) SubmitBundleProposal(
 			return nil, errTransfer
 		}
 
+		// save valid bundle
+		k.SetProposal(ctx, types.Proposal{
+			BundleId:    pool.BundleProposal.BundleId,
+			PoolId:      pool.Id,
+			Id:          pool.TotalBundles,
+			Uploader:    pool.BundleProposal.Uploader,
+			FromHeight:  pool.CurrentHeight,
+			ToHeight:    pool.BundleProposal.ToHeight,
+			FinalizedAt: uint64(ctx.BlockHeight()),
+			Key:         pool.BundleProposal.ToKey,
+			Value:       pool.BundleProposal.ToValue,
+		})
+
 		// Finalise the proposal, saving useful information.
-		pool.HeightArchived = pool.BundleProposal.ToHeight
-		pool.BytesArchived = pool.BytesArchived + pool.BundleProposal.ByteSize
-		pool.TotalBundleRewards = pool.TotalBundleRewards + bundleReward
+		pool.CurrentHeight = pool.BundleProposal.ToHeight
+		pool.TotalBytes = pool.TotalBytes + pool.BundleProposal.ByteSize
 		pool.TotalBundles = pool.TotalBundles + 1
+		pool.TotalBundleRewards = pool.TotalBundleRewards + bundleReward
+		pool.CurrentKey = pool.BundleProposal.ToKey
+		pool.CurrentValue = pool.BundleProposal.ToValue
 
 		// Emit a valid bundle event.
-		types.EmitBundleValidEvent(ctx, &pool, bundleReward)
+		errEmit := ctx.EventManager().EmitTypedEvent(&types.EventBundleFinalised{
+			PoolId:       pool.Id,
+			BundleId:     pool.BundleProposal.BundleId,
+			ByteSize:     pool.BundleProposal.ByteSize,
+			Uploader:     pool.BundleProposal.Uploader,
+			NextUploader: pool.BundleProposal.NextUploader,
+			Reward:       bundleReward,
+			Valid:        uint64(len(pool.BundleProposal.VotersValid)),
+			Invalid:      uint64(len(pool.BundleProposal.VotersInvalid)),
+			FromHeight:   pool.BundleProposal.FromHeight,
+			ToHeight:     pool.BundleProposal.ToHeight,
+			Status:       types.BUNDLE_STATUS_VALID,
+			ToKey:        pool.BundleProposal.ToKey,
+			ToValue:      pool.BundleProposal.ToValue,
+			Id:           pool.TotalBundles - 1,
+		})
+		if errEmit != nil {
+			return nil, errEmit
+		}
 
 		// Set submitted bundle as new bundle proposal and select new next_uploader
 		pool.BundleProposal = &types.BundleProposal{
@@ -300,9 +400,10 @@ func (k msgServer) SubmitBundleProposal(
 			NextUploader: nextUploader,
 			BundleId:     msg.BundleId,
 			ByteSize:     msg.ByteSize,
-			FromHeight:   pool.BundleProposal.ToHeight,
-			ToHeight:     pool.BundleProposal.ToHeight + msg.BundleSize,
+			ToHeight:     msg.ToHeight,
 			CreatedAt:    uint64(ctx.BlockTime().Unix()),
+			ToKey:        msg.ToKey,
+			ToValue:      msg.ToValue,
 		}
 
 		k.SetPool(ctx, pool)
@@ -312,26 +413,59 @@ func (k msgServer) SubmitBundleProposal(
 		// Partially slash all nodes who voted incorrectly.
 		for _, voter := range pool.BundleProposal.VotersValid {
 			slashAmount := k.slashStaker(ctx, &pool, voter, k.VoteSlash(ctx))
-			types.EmitSlashEvent(ctx, pool.Id, voter, slashAmount)
+
+			errEmit := ctx.EventManager().EmitTypedEvent(&types.EventSlash{
+				PoolId:    pool.Id,
+				Address:   voter,
+				Amount:    slashAmount,
+				SlashType: types.SLASH_TYPE_VOTE,
+			})
+			if errEmit != nil {
+				return nil, errEmit
+			}
 		}
 
 		// Partially slash the uploader.
 		slashAmount := k.slashStaker(ctx, &pool, pool.BundleProposal.Uploader, k.UploadSlash(ctx))
 
 		// emit slash event
-		types.EmitSlashEvent(ctx, pool.Id, pool.BundleProposal.Uploader, slashAmount)
+		errEmit := ctx.EventManager().EmitTypedEvent(&types.EventSlash{
+			PoolId:    pool.Id,
+			Address:   pool.BundleProposal.Uploader,
+			Amount:    slashAmount,
+			SlashType: types.SLASH_TYPE_UPLOAD,
+		})
+		if errEmit != nil {
+			return nil, errEmit
+		}
 
 		// Update the current lowest staker.
 		k.updateLowestStaker(ctx, &pool)
 
 		// Emit an invalid bundle event.
-		types.EmitBundleInvalidEvent(ctx, &pool)
+		errEmit = ctx.EventManager().EmitTypedEvent(&types.EventBundleFinalised{
+			PoolId:       pool.Id,
+			BundleId:     pool.BundleProposal.BundleId,
+			ByteSize:     pool.BundleProposal.ByteSize,
+			Uploader:     pool.BundleProposal.Uploader,
+			NextUploader: pool.BundleProposal.NextUploader,
+			Reward:       0,
+			Valid:        uint64(len(pool.BundleProposal.VotersValid)),
+			Invalid:      uint64(len(pool.BundleProposal.VotersInvalid)),
+			FromHeight:   pool.BundleProposal.FromHeight,
+			ToHeight:     pool.BundleProposal.ToHeight,
+			Status:       types.BUNDLE_STATUS_INVALID,
+			ToKey:        pool.BundleProposal.ToKey,
+			ToValue:      pool.BundleProposal.ToValue,
+			Id:           0,
+		})
+		if errEmit != nil {
+			return nil, errEmit
+		}
 
 		// Update and return.
 		pool.BundleProposal = &types.BundleProposal{
 			NextUploader: pool.BundleProposal.NextUploader,
-			FromHeight:   pool.BundleProposal.FromHeight,
-			ToHeight:     pool.BundleProposal.FromHeight,
 			CreatedAt:    uint64(ctx.BlockTime().Unix()),
 		}
 

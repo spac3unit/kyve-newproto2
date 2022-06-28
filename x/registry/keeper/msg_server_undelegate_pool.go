@@ -55,18 +55,25 @@ func (k msgServer) UndelegatePool(
 	redelegation := undelegatedAmount - msg.Amount
 	f1Distribution.Delegate(redelegation)
 
-	// Transfer the money
-	err = k.TransferToAddress(ctx, msg.Creator, msg.Amount)
-	if err != nil {
-		k.PanicHalt(ctx, "Not enough money in module: "+err.Error())
-	}
-
-	// Event an undelegate event.
-	types.EmitUndelegateEvent(ctx, pool.Id, delegator.Delegator, msg.Staker, msg.Amount)
-
 	// Update and return.
 	pool.TotalDelegation -= msg.Amount
 	k.SetPool(ctx, pool)
+
+	// Event an undelegate event.
+	errEmit := ctx.EventManager().EmitTypedEvent(&types.EventUndelegatePool{
+		PoolId:  pool.Id,
+		Address: delegator.Delegator,
+		Node:    msg.Staker,
+		Amount:  msg.Amount,
+	})
+	if errEmit != nil {
+		return nil, errEmit
+	}
+
+	unbondingError := k.StartUnbondingDelegator(ctx, msg.Id, msg.Staker, msg.Creator, msg.Amount)
+	if unbondingError != nil {
+		return nil, unbondingError
+	}
 
 	return &types.MsgUndelegatePoolResponse{}, nil
 }

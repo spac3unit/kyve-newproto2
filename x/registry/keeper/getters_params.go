@@ -16,6 +16,8 @@ func (k Keeper) GetParams(ctx sdk.Context) types.Params {
 		k.StorageCost(ctx),
 		k.NetworkFee(ctx),
 		k.MaxPoints(ctx),
+		k.UnbondingStakingTime(ctx),
+		k.UnbondingStakingTime(ctx),
 	)
 }
 
@@ -63,6 +65,18 @@ func (k Keeper) NetworkFee(ctx sdk.Context) (res string) {
 // MaxPoints returns the MaxPoints param
 func (k Keeper) MaxPoints(ctx sdk.Context) (res uint64) {
 	k.paramstore.Get(ctx, types.KeyMaxPoints, &res)
+	return
+}
+
+// UnbondingStakingTime ...
+func (k Keeper) UnbondingStakingTime(ctx sdk.Context) (res uint64) {
+	k.paramstore.Get(ctx, types.KeyUnbondingStakingTime, &res)
+	return
+}
+
+// UnbondingDelegationTime ...
+func (k Keeper) UnbondingDelegationTime(ctx sdk.Context) (res uint64) {
+	k.paramstore.Get(ctx, types.KeyUnbondingDelegationTime, &res)
 	return
 }
 

@@ -27,62 +27,99 @@ genesis:
         bond_denom: "tkyve"
     gov:
       voting_params:
-        # 2 minutes
-        voting_period: "120s"
-      deposit_params:
-        min_deposit: [
+        # 1 day
+        voting_period: "86400s"
+        proposal_voting_periods: [
           {
-            denom: "tkyve",
-            # 500 $KYVE
-            amount: "500000000000"
+            proposal_type: "kyve.registry.v1beta1.CreatePoolProposal",
+            # 2 hours
+            voting_period: "7200s"
+          },
+          {
+            proposal_type: "kyve.registry.v1beta1.PausePoolProposal",
+            # 5 minutes
+            voting_period: "300s"
           }
         ]
+        # 30 minutes
+        expedited_voting_period: "1800s"
+      deposit_params:
+          min_deposit: [
+            {
+              denom: "tkyve",
+              # 5_000 $KYVE
+              amount: "5_000_000_000_000"
+            }
+          ]
+          # 5 minutes
+          max_deposit_period: "300s"
+          min_expedited_deposit: [
+            {
+              denom: "tkyve",
+              # 25_000 $KYVE
+              amount: "25_000_000_000_000"
+            }
+          ]
     registry:
       pool_count: "1"
       pool_list: [
         {
-          bytes_archived: "0",
-          config: "{\"rpc\":\"https://rpc.api.moonbeam.network\",\"github\":\"https://github.com/KYVENetwork/evm\"}",
-          creator: "gov",
-          funders: [ ],
-          height_archived: "0",
           id: "0",
-          logo: "9FJDam56yBbmvn8rlamEucATH5UcYqSBw468rlCXn8E",
-          lowest_funder: "",
-          lowest_staker: "",
-          upload_interval: "100",
+          creator: "gov",
           name: "Moonbeam",
+          runtime: "@kyve/evm",
+          logo: "9FJDam56yBbmvn8rlamEucATH5UcYqSBw468rlCXn8E",
+          versions: "",
+          config: "{\"rpc\":\"https://rpc.api.moonbeam.network\",\"github\":\"https://github.com/KYVENetwork/evm\"}",
+
+          current_height: "0",
+          total_bytes: "0",
+          total_bundles: "0",
+          total_bundle_rewards: "0",
+
+          start_height: "0",
+          upload_interval: "60",
           operating_cost: "100",
           paused: false,
-          runtime: "@kyve/evm",
-          stakers: [ ],
-          start_height: "0",
-          total_bundle_rewards: "0",
-          total_bundles: "0",
-          total_delegation: "0",
+
+          funders: [ ],
+          lowest_funder: "",
           total_funds: "0",
+
+          stakers: [ ],
+          lowest_staker: "",
           total_stake: "0",
-          versions: "",
+          total_delegation: "0",
+
           bundle_proposal:
+            uploader: ""
+            next_uploader: ""
             bundle_id: ""
             byte_size: "0"
-            created_at: "0"
             from_height: "0"
-            next_uploader: ""
             to_height: "0"
-            uploader: ""
+            created_at: "0"
+            voters_valid: [ ]
             voters_invalid: [ ]
-            voters_valid: [ ],
+            voters_abstain: [ ]
+            to_key: ""
+            to_value: "",
+
           max_bundle_size: "100",
+
           protocol:
-            version: "1.0.5"
+            version: "1.2.0"
             binaries: "{\"macos\":\"https://github.com/kyve-org/evm/releases/download/v1.0.5/kyve-evm-macos.zip\"}"
             last_upgrade: "0",
           upgrade_plan:
             version: ""
             binaries: ""
             scheduled_at: "0"
-            duration: "0"
+            duration: "0",
+            
+          start_key: "2000",
+          current_key: "",
+          current_value: ""
         }
       ]
 validator:
