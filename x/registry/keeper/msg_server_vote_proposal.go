@@ -94,18 +94,18 @@ func (k msgServer) VoteProposal(
 		)
 	}
 
-	if hasVotedAbstain && msg.Vote == 2 {
+	if hasVotedAbstain && msg.Vote == types.VOTE_TYPE_ABSTAIN {
 		return nil, sdkErrors.Wrapf(
 			sdkErrors.ErrUnauthorized, types.ErrAlreadyVoted.Error(), pool.BundleProposal.BundleId,
 		)
 	}
 
 	// Update and return.
-	if msg.Vote == 0 {
+	if msg.Vote == types.VOTE_TYPE_YES {
 		pool.BundleProposal.VotersValid = append(pool.BundleProposal.VotersValid, msg.Creator)
-	} else if msg.Vote == 1 {
+	} else if msg.Vote == types.VOTE_TYPE_NO {
 		pool.BundleProposal.VotersInvalid = append(pool.BundleProposal.VotersInvalid, msg.Creator)
-	} else if msg.Vote == 2 {
+	} else if msg.Vote == types.VOTE_TYPE_ABSTAIN {
 		pool.BundleProposal.VotersAbstain = append(pool.BundleProposal.VotersAbstain, msg.Creator)
 	} else {
 		return nil, sdkErrors.Wrapf(

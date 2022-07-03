@@ -279,7 +279,7 @@ func (k msgServer) SubmitBundleProposal(
 					Reward:       0,
 					Valid:        uint64(len(pool.BundleProposal.VotersValid)),
 					Invalid:      uint64(len(pool.BundleProposal.VotersInvalid)),
-					FromHeight:   pool.BundleProposal.FromHeight,
+					FromHeight:   pool.CurrentHeight,
 					ToHeight:     pool.BundleProposal.ToHeight,
 					Status:       types.BUNDLE_STATUS_NO_FUNDS,
 					ToKey:        pool.BundleProposal.ToKey,
@@ -366,6 +366,7 @@ func (k msgServer) SubmitBundleProposal(
 		})
 
 		// Finalise the proposal, saving useful information.
+		eventFromHeight := pool.CurrentHeight
 		pool.CurrentHeight = pool.BundleProposal.ToHeight
 		pool.TotalBytes = pool.TotalBytes + pool.BundleProposal.ByteSize
 		pool.TotalBundles = pool.TotalBundles + 1
@@ -383,7 +384,7 @@ func (k msgServer) SubmitBundleProposal(
 			Reward:       bundleReward,
 			Valid:        uint64(len(pool.BundleProposal.VotersValid)),
 			Invalid:      uint64(len(pool.BundleProposal.VotersInvalid)),
-			FromHeight:   pool.BundleProposal.FromHeight,
+			FromHeight:   eventFromHeight,
 			ToHeight:     pool.BundleProposal.ToHeight,
 			Status:       types.BUNDLE_STATUS_VALID,
 			ToKey:        pool.BundleProposal.ToKey,
@@ -452,7 +453,7 @@ func (k msgServer) SubmitBundleProposal(
 			Reward:       0,
 			Valid:        uint64(len(pool.BundleProposal.VotersValid)),
 			Invalid:      uint64(len(pool.BundleProposal.VotersInvalid)),
-			FromHeight:   pool.BundleProposal.FromHeight,
+			FromHeight:   pool.CurrentHeight,
 			ToHeight:     pool.BundleProposal.ToHeight,
 			Status:       types.BUNDLE_STATUS_INVALID,
 			ToKey:        pool.BundleProposal.ToKey,
