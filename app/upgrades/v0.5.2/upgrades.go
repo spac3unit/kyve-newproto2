@@ -1,11 +1,14 @@
-package v0_5_1
+package v0_5_2
 
 import (
 	registrykeeper "github.com/KYVENetwork/chain/x/registry/keeper"
 	"github.com/KYVENetwork/chain/x/registry/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
+	govkeeper "github.com/cosmos/cosmos-sdk/x/gov/keeper"
+	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 	upgradetypes "github.com/cosmos/cosmos-sdk/x/upgrade/types"
+	"time"
 )
 
 func migratePools(registryKeeper *registrykeeper.Keeper, ctx sdk.Context) {
@@ -70,12 +73,28 @@ func migratePools(registryKeeper *registrykeeper.Keeper, ctx sdk.Context) {
 	}
 }
 
+func updateGovParams(ctx sdk.Context, govKeeper *govkeeper.Keeper) {
+	govKeeper.SetDepositParams(ctx, govtypes.DepositParams{
+		// 20,000 $KYVE
+		MinDeposit: sdk.NewCoins(sdk.NewInt64Coin("tkyve", 20_000_000_000_000)),
+		// 5 minutes
+		MaxDepositPeriod: time.Minute * 5,
+		// 100,000 $KYVE
+		MinExpeditedDeposit: sdk.NewCoins(sdk.NewInt64Coin("tkyve", 100_000_000_000_000)),
+		// 25%
+		MinDepositPercentage: sdk.NewDecWithPrec(25, 2),
+	})
+}
+
 func CreateUpgradeHandler(
+	govKeeper *govkeeper.Keeper,
 	registryKeeper *registrykeeper.Keeper,
 ) upgradetypes.UpgradeHandler {
 	return func(ctx sdk.Context, plan upgradetypes.Plan, vm module.VersionMap) (module.VersionMap, error) {
 
 		migratePools(registryKeeper, ctx)
+
+		updateGovParams(ctx, govKeeper)
 
 		// Return.
 		return vm, nil

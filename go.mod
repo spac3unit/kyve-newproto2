@@ -20,7 +20,7 @@ require (
 )
 
 replace (
-	github.com/cosmos/cosmos-sdk => github.com/KYVENetwork/cosmos-sdk v0.45.6-kyve-v0.5.1-rc1
+	github.com/cosmos/cosmos-sdk => github.com/KYVENetwork/cosmos-sdk v0.45.6-kyve-v0.5.2
 	github.com/cosmos/ibc-go/v3 => github.com/KYVENetwork/ibc-go/v3 v3.1.0-kyve-v0
 	github.com/gogo/protobuf => github.com/regen-network/protobuf v1.3.3-alpha.regen.1
 	github.com/keybase/go-keychain => github.com/99designs/go-keychain v0.0.0-20191008050251-8e49817e8af4
