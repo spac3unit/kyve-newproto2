@@ -1,6 +1,6 @@
 # The KYVE Chain
 
-###### v0.4.0
+###### v0.5.3
 
 The chain nodes are the backbone of KYVE. The chain layer is a completely sovereign
 [Proof of Stake](https://en.wikipedia.org/wiki/Proof_of_stake) blockchain build with
@@ -26,3 +26,8 @@ If you need to build for different architectures, use the `-t` flag, e.g. `-t li
 ## Running a chain node
 
 Full documentation for setting up a chain node are provided [here](https://docs.kyve.network/getting-started/chain-node.html).
+
+
+### Emergency_1295379
+On block #1295379 the chain halts and an emergency upgrade is required.
+This upgrade is not handled by cosmovisor. To manually perform the upgrade visit [Emergency_1295379.md](emergency_1295379.md)
