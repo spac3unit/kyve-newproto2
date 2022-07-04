@@ -81,55 +81,53 @@ func (k Keeper) ProcessStakerUnbondingQueue(ctx sdk.Context) {
 
 			// Update internal UnbondingStaker value
 			unbondingStaker, foundUnbondingStaker := k.GetUnbondingStaker(ctx, unbondingStakingEntry.PoolId, unbondingStakingEntry.Staker)
-			if !foundUnbondingStaker {
-				k.PanicHalt(ctx, "Inconsistent state, unbondingStaker should exist")
-			}
+			if foundUnbondingStaker {
+				unbondingStaker.UnbondingAmount -= unbondingStakingEntry.Amount
+				k.SetUnbondingStaker(ctx, unbondingStaker)
 
-			unbondingStaker.UnbondingAmount -= unbondingStakingEntry.Amount
-			k.SetUnbondingStaker(ctx, unbondingStaker)
+				// Update Pool Stakers and logic
 
-			// Update Pool Stakers and logic
-
-			pool, foundPool := k.GetPool(ctx, unbondingStakingEntry.PoolId)
-			if !foundPool {
-				k.PanicHalt(ctx, "Pool should exist")
-			}
-
-			staker, foundStaker := k.GetStaker(ctx, unbondingStakingEntry.Staker, unbondingStakingEntry.PoolId)
-			if foundStaker {
-				// Check if stake decreased during unbonding time
-				var unstakeAmount uint64 = 0
-				if unbondingStakingEntry.Amount >= staker.Amount {
-					// Remove user
-					k.removeStaker(ctx, &pool, &staker)
-					unstakeAmount = staker.Amount
-
-					//Remove unbondingStaker entry
-					k.RemoveUnbondingStaker(ctx, &unbondingStaker)
-				} else {
-					// Reduce stake of user
-					unstakeAmount = unbondingStakingEntry.Amount
-
-					staker.Amount -= unstakeAmount
-					pool.TotalStake -= unbondingStakingEntry.Amount
-
-					k.SetStaker(ctx, staker)
+				pool, foundPool := k.GetPool(ctx, unbondingStakingEntry.PoolId)
+				if !foundPool {
+					k.PanicHalt(ctx, "Pool should exist")
 				}
 
-				k.updateLowestStaker(ctx, &pool)
-				k.SetPool(ctx, pool)
+				staker, foundStaker := k.GetStaker(ctx, unbondingStakingEntry.Staker, unbondingStakingEntry.PoolId)
+				if foundStaker {
+					// Check if stake decreased during unbonding time
+					var unstakeAmount uint64 = 0
+					if unbondingStakingEntry.Amount >= staker.Amount {
+						// Remove user
+						k.removeStaker(ctx, &pool, &staker)
+						unstakeAmount = staker.Amount
 
-				// Transfer the money
-				transferError := k.TransferToAddress(ctx, unbondingStakingEntry.Staker, unstakeAmount)
-				if transferError != nil {
-					k.PanicHalt(ctx, "Not enough money in module: "+transferError.Error())
+						//Remove unbondingStaker entry
+						k.RemoveUnbondingStaker(ctx, &unbondingStaker)
+					} else {
+						// Reduce stake of user
+						unstakeAmount = unbondingStakingEntry.Amount
+
+						staker.Amount -= unstakeAmount
+						pool.TotalStake -= unbondingStakingEntry.Amount
+
+						k.SetStaker(ctx, staker)
+					}
+
+					k.updateLowestStaker(ctx, &pool)
+					k.SetPool(ctx, pool)
+
+					// Transfer the money
+					transferError := k.TransferToAddress(ctx, unbondingStakingEntry.Staker, unstakeAmount)
+					if transferError != nil {
+						k.PanicHalt(ctx, "Not enough money in module: "+transferError.Error())
+					}
+
+					ctx.EventManager().EmitTypedEvent(&types.EventUnstakePool{
+						PoolId:  pool.Id,
+						Address: unbondingStakingEntry.Staker,
+						Amount:  unstakeAmount,
+					})
 				}
-
-				ctx.EventManager().EmitTypedEvent(&types.EventUnstakePool{
-					PoolId:  pool.Id,
-					Address: unbondingStakingEntry.Staker,
-					Amount:  unstakeAmount,
-				})
 			}
 
 			k.RemoveUnbondingStakingQueueEntry(ctx, &unbondingStakingEntry)
