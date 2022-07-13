@@ -146,8 +146,8 @@ func migrateProposals(registryKeeper *registrykeeper.Keeper, ctx sdk.Context) {
 		var lastProposal types.Proposal
 
 		for ; iterator.Valid(); iterator.Next() {
-			bundleId := string(iterator.Value())
-			proposal, _ := registryKeeper.GetProposal(ctx, bundleId)
+			storageId := string(iterator.Value())
+			proposal, _ := registryKeeper.GetProposal(ctx, storageId)
 			proposal.Id = id
 			id += 1
 			proposal.Key = strconv.FormatUint(proposal.ToHeight-1, 10)

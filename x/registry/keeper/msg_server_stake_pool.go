@@ -32,44 +32,33 @@ func (k msgServer) StakePool(goCtx context.Context, msg *types.MsgStakePool) (*t
 			lowestStaker, _ := k.GetStaker(ctx, pool.LowestStaker, msg.Id)
 
 			if msg.Amount > lowestStaker.Amount {
-				// Transfer tokens from this module to the lowest staker.
-				err := k.TransferToAddress(ctx, lowestStaker.Account, lowestStaker.Amount)
-				if err != nil {
-					return nil, err
-				}
 
-				// Emit an unstake event.
-				errEmit := ctx.EventManager().EmitTypedEvent(&types.EventUnstakePool{
-					PoolId:  msg.Id,
+				if errEmit := ctx.EventManager().EmitTypedEvent(&types.EventStakerStatusChanged{
+					PoolId:  pool.Id,
 					Address: lowestStaker.Account,
-					Amount:  lowestStaker.Amount,
-				})
-				if errEmit != nil {
+					Status:  types.STAKER_STATUS_INACTIVE,
+				}); errEmit != nil {
 					return nil, errEmit
 				}
 
-				// Remove lowest staker.
-				k.removeStaker(ctx, &pool, &lowestStaker)
+				// Move the lowest staker to inactive staker set
+				deactivateStaker(&pool, &lowestStaker)
+				k.SetStaker(ctx, lowestStaker)
+
 			} else {
 				return nil, sdkErrors.Wrapf(sdkErrors.ErrLogic, types.ErrStakeTooLow.Error(), lowestStaker.Amount)
 			}
 		}
 
 		pool.Stakers = append(pool.Stakers, msg.Creator)
-		if staker.Commission == "" {
-			k.SetStaker(ctx, types.Staker{
-				Account:    msg.Creator,
-				PoolId:     msg.Id,
-				Amount:     msg.Amount,
-				Commission: types.DefaultCommission,
-			})
-		} else {
-			k.SetStaker(ctx, types.Staker{
-				Account: msg.Creator,
-				PoolId:  msg.Id,
-				Amount:  msg.Amount,
-			})
-		}
+
+		k.SetStaker(ctx, types.Staker{
+			Account:    msg.Creator,
+			PoolId:     msg.Id,
+			Amount:     msg.Amount,
+			Commission: types.DefaultCommission,
+			Status:     types.STAKER_STATUS_ACTIVE,
+		})
 	}
 
 	// Transfer tokens from sender to this module.
@@ -88,8 +77,13 @@ func (k msgServer) StakePool(goCtx context.Context, msg *types.MsgStakePool) (*t
 		return nil, errEmit
 	}
 
-	// Update and return.
-	pool.TotalStake += msg.Amount
+	staker, _ = k.GetStaker(ctx, msg.Creator, msg.Id)
+	if staker.Status == types.STAKER_STATUS_ACTIVE {
+		pool.TotalStake += msg.Amount
+	} else if staker.Status == types.STAKER_STATUS_INACTIVE {
+		pool.TotalInactiveStake += msg.Amount
+	}
+
 	k.updateLowestStaker(ctx, &pool)
 	k.SetPool(ctx, pool)
 

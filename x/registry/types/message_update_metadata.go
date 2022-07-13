@@ -9,17 +9,6 @@ const TypeMsgUpdateMetadata = "update_metadata"
 
 var _ sdk.Msg = &MsgUpdateMetadata{}
 
-func NewMsgUpdateMetadata(creator string, id uint64, commission string, moniker string, website string, logo string) *MsgUpdateMetadata {
-	return &MsgUpdateMetadata{
-		Creator:    creator,
-		Id:         id,
-		Commission: commission,
-		Moniker:    moniker,
-		Website:    website,
-		Logo:       logo,
-	}
-}
-
 func (msg *MsgUpdateMetadata) Route() string {
 	return RouterKey
 }

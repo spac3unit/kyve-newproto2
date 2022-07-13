@@ -32,6 +32,14 @@ func (k Keeper) CanVote(goCtx context.Context, req *types.QueryCanVoteRequest) (
 		}, nil
 	}
 
+	// Check if minimum stake is reached
+	if pool.TotalStake < pool.MinStake {
+		return &types.QueryCanVoteResponse{
+			Possible: false,
+			Reason:   "Not enough stake in pool",
+		}, nil
+	}
+
 	// Check if pool has funds
 	if pool.TotalFunds == 0 {
 		return &types.QueryCanVoteResponse{
@@ -66,7 +74,7 @@ func (k Keeper) CanVote(goCtx context.Context, req *types.QueryCanVoteRequest) (
 	}
 
 	// Check if dropped bundle
-	if pool.BundleProposal.BundleId == "" {
+	if pool.BundleProposal.StorageId == "" {
 		return &types.QueryCanVoteResponse{
 			Possible: false,
 			Reason:   "Can not vote on dropped bundle",
@@ -74,7 +82,7 @@ func (k Keeper) CanVote(goCtx context.Context, req *types.QueryCanVoteRequest) (
 	}
 
 	// Check if empty bundle
-	if strings.HasPrefix(pool.BundleProposal.BundleId, types.KYVE_NO_DATA_BUNDLE) {
+	if strings.HasPrefix(pool.BundleProposal.StorageId, types.KYVE_NO_DATA_BUNDLE) {
 		return &types.QueryCanVoteResponse{
 			Possible: false,
 			Reason:   "Can not vote on NO_DATA_BUNDLE",
@@ -82,10 +90,10 @@ func (k Keeper) CanVote(goCtx context.Context, req *types.QueryCanVoteRequest) (
 	}
 
 	// Check if tx matches current bundleProposal
-	if req.BundleId != pool.BundleProposal.BundleId {
+	if req.StorageId != pool.BundleProposal.StorageId {
 		return &types.QueryCanVoteResponse{
 			Possible: false,
-			Reason:   "Provided bundleId does not match current one",
+			Reason:   "Provided storageId does not match current one",
 		}, nil
 	}
 

@@ -55,10 +55,10 @@ func CmdShowProposal() *cobra.Command {
 
 			queryClient := types.NewQueryClient(clientCtx)
 
-			argBundleId := args[0]
+			argStorageId := args[0]
 
 			params := &types.QueryProposalRequest{
-				BundleId: argBundleId,
+				StorageId: argStorageId,
 			}
 
 			res, err := queryClient.Proposal(context.Background(), params)

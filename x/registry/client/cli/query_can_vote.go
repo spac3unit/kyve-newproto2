@@ -22,7 +22,7 @@ func CmdCanVote() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			reqBundleId := args[1]
+			reqStorageId := args[1]
 			reqVoter := args[2]
 
 			clientCtx, err := client.GetClientQueryContext(cmd)
@@ -35,7 +35,7 @@ func CmdCanVote() *cobra.Command {
 			params := &types.QueryCanVoteRequest{
 
 				PoolId:   reqId,
-				BundleId: reqBundleId,
+				StorageId: reqStorageId,
 				Voter:    reqVoter,
 			}
 

@@ -9,11 +9,11 @@ const TypeMsgSubmitBundleProposal = "submit_bundle_proposal"
 
 var _ sdk.Msg = &MsgSubmitBundleProposal{}
 
-func NewMsgSubmitBundleProposal(creator string, id uint64, bundleId string, byteSize uint64, fromHeight uint64, toHeight uint64, fromKey string, toKey string, toValue string) *MsgSubmitBundleProposal {
+func NewMsgSubmitBundleProposal(creator string, id uint64, storageId string, byteSize uint64, fromHeight uint64, toHeight uint64, fromKey string, toKey string, toValue string) *MsgSubmitBundleProposal {
 	return &MsgSubmitBundleProposal{
 		Creator:    creator,
 		Id:         id,
-		BundleId:   bundleId,
+		StorageId:   storageId,
 		ByteSize:   byteSize,
 		FromHeight: fromHeight,
 		ToHeight: toHeight,

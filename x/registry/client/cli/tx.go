@@ -41,7 +41,9 @@ func GetTxCmd() *cobra.Command {
 	cmd.AddCommand(CmdDelegatePool())
 	cmd.AddCommand(CmdWithdrawPool())
 	cmd.AddCommand(CmdUndelegatePool())
+	cmd.AddCommand(CmdRedelegatePool())
 	cmd.AddCommand(CmdUpdateMetadata())
+	cmd.AddCommand(CmdUpdateCommission())
 
 	cmd.AddCommand(CmdSubmitCreatePoolProposal())
 	cmd.AddCommand(CmdSubmitUpdatePoolProposal())
@@ -49,6 +51,7 @@ func GetTxCmd() *cobra.Command {
 	cmd.AddCommand(CmdSubmitUnpausePoolProposal())
 	cmd.AddCommand(CmdSubmitSchedulePoolUpgradeProposal())
 	cmd.AddCommand(CmdSubmitCancelPoolUpgradeProposal())
+	cmd.AddCommand(CmdSubmitResetPoolProposal())
 
 	return cmd
 }
@@ -56,15 +59,10 @@ func GetTxCmd() *cobra.Command {
 func CmdSubmitCreatePoolProposal() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "create-pool [flags]",
-		Args:  cobra.ExactArgs(10),
+		Args:  cobra.ExactArgs(11),
 		Short: "Submit a proposal to create a pool.",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			clientCtx, err := client.GetClientTxContext(cmd)
-			if err != nil {
-				return err
-			}
-
-			startHeight, err := strconv.ParseUint(args[4], 10, 64)
 			if err != nil {
 				return err
 			}
@@ -80,6 +78,11 @@ func CmdSubmitCreatePoolProposal() *cobra.Command {
 			}
 
 			maxBundleSize, err := strconv.ParseUint(args[7], 10, 64)
+			if err != nil {
+				return err
+			}
+
+			minStake, err := strconv.ParseUint(args[11], 10, 64)
 			if err != nil {
 				return err
 			}
@@ -105,7 +108,7 @@ func CmdSubmitCreatePoolProposal() *cobra.Command {
 				return err
 			}
 
-			content := types.NewCreatePoolProposal(title, description, args[0], args[1], args[2], args[3], startHeight, uploadInterval, operatingCost, maxBundleSize, args[8], args[9])
+			content := types.NewCreatePoolProposal(title, description, args[0], args[1], args[2], args[3], uploadInterval, operatingCost, maxBundleSize, args[8], args[9], args[10], minStake)
 
 			isExpedited, err := cmd.Flags().GetBool(cli.FlagIsExpedited)
 			if err != nil {
@@ -138,7 +141,7 @@ func CmdSubmitCreatePoolProposal() *cobra.Command {
 func CmdSubmitUpdatePoolProposal() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "update-pool [flags]",
-		Args:  cobra.ExactArgs(8),
+		Args:  cobra.ExactArgs(9),
 		Short: "Submit a proposal to update a pool.",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			clientCtx, err := client.GetClientTxContext(cmd)
@@ -166,6 +169,11 @@ func CmdSubmitUpdatePoolProposal() *cobra.Command {
 				return err
 			}
 
+			minStake, err := strconv.ParseUint(args[8], 10, 64)
+			if err != nil {
+				return err
+			}
+
 			title, err := cmd.Flags().GetString(cli.FlagTitle)
 			if err != nil {
 				return err
@@ -187,7 +195,7 @@ func CmdSubmitUpdatePoolProposal() *cobra.Command {
 				return err
 			}
 
-			content := types.NewUpdatePoolProposal(title, description, id, args[1], args[2], args[3], args[4], uploadInterval, operatingCost, maxBundleSize)
+			content := types.NewUpdatePoolProposal(title, description, id, args[1], args[2], args[3], args[4], uploadInterval, operatingCost, maxBundleSize, minStake)
 
 			isExpedited, err := cmd.Flags().GetBool(cli.FlagIsExpedited)
 			if err != nil {
@@ -456,6 +464,78 @@ func CmdSubmitCancelPoolUpgradeProposal() *cobra.Command {
 			}
 
 			content := types.NewCancelPoolUpgradeProposal(title, description, args[0])
+
+			isExpedited, err := cmd.Flags().GetBool(cli.FlagIsExpedited)
+			if err != nil {
+				return err
+			}
+
+			msg, err := govtypes.NewMsgSubmitProposal(content, deposit, from, isExpedited)
+			if err != nil {
+				return err
+			}
+
+			if err = msg.ValidateBasic(); err != nil {
+				return err
+			}
+
+			return tx.GenerateOrBroadcastTxCLI(clientCtx, cmd.Flags(), msg)
+		},
+	}
+
+	cmd.Flags().String(cli.FlagTitle, "", "The proposal title")
+	cmd.Flags().String(cli.FlagDescription, "", "The proposal description")
+	cmd.Flags().Bool(cli.FlagIsExpedited, false, "If true, makes the proposal an expedited one")
+	cmd.Flags().String(cli.FlagDeposit, "", "The proposal deposit")
+	_ = cmd.MarkFlagRequired(cli.FlagTitle)
+	_ = cmd.MarkFlagRequired(cli.FlagDescription)
+
+	return cmd
+}
+
+func CmdSubmitResetPoolProposal() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "reset-pool [flags]",
+		Args:  cobra.ExactArgs(2),
+		Short: "Submit a proposal to reset a pool to a specific bundle.",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			clientCtx, err := client.GetClientTxContext(cmd)
+			if err != nil {
+				return err
+			}
+
+			argId, err := strconv.ParseUint(args[0], 10, 64)
+			if err != nil {
+				return err
+			}
+
+			argBundleId, err := strconv.ParseUint(args[1], 10, 64)
+			if err != nil {
+				return err
+			}
+
+			title, err := cmd.Flags().GetString(cli.FlagTitle)
+			if err != nil {
+				return err
+			}
+
+			description, err := cmd.Flags().GetString(cli.FlagDescription)
+			if err != nil {
+				return err
+			}
+
+			from := clientCtx.GetFromAddress()
+
+			depositStr, err := cmd.Flags().GetString(cli.FlagDeposit)
+			if err != nil {
+				return err
+			}
+			deposit, err := sdk.ParseCoinsNormalized(depositStr)
+			if err != nil {
+				return err
+			}
+
+			content := types.NewResetPoolProposal(title, description, argId, argBundleId)
 
 			isExpedited, err := cmd.Flags().GetBool(cli.FlagIsExpedited)
 			if err != nil {

@@ -3,6 +3,7 @@ syntax = "proto3";
 package kyve.registry.v1beta1;
 
 import "gogoproto/gogo.proto";
+import "kyve/registry/v1beta1/registry.proto";
 import "kyve/registry/v1beta1/tx.proto";
 
 option go_package = "github.com/KYVENetwork/chain/x/registry/types";
@@ -43,8 +44,8 @@ enum SlashType {
 message EventBundleFinalised {
   // pool_id is the unique ID of the pool.
   uint64 pool_id = 1;
-  // bundle_id ...
-  string bundle_id = 2;
+  // storage_id ...
+  string storage_id = 2;
   // byte_size ...
   uint64 byte_size = 3;
   // uploader ...
@@ -69,6 +70,12 @@ message EventBundleFinalised {
   string to_value = 13;
   // id ...
   uint64 id = 14;
+  // bundle_hash ...
+  string bundle_hash = 15;
+  // abstain ...
+  uint64 abstain = 16;
+  // total ...
+  uint64 total = 17;
 }
 
 // EventBundleVote is an event emitted when a protocol node votes on a bundle.
@@ -77,8 +84,8 @@ message EventBundleVote {
   uint64 pool_id = 1;
   // address is the account address of the protocol node.
   string address = 2;
-  // bundle_id is the unique ID of the bundle.
-  string bundle_id = 3;
+  // storage_id is the unique ID of the bundle.
+  string storage_id = 3;
   // vote is the vote type of the protocol node.
   VoteType vote = 4;
 }
@@ -107,6 +114,22 @@ message EventUndelegatePool {
   string node = 3;
   // amount ...
   uint64 amount = 4;
+}
+
+// EventRedelegatePool is an event emitted when someone redelegates from one protocol node to another.
+message EventRedelegatePool {
+  // address is the account address of the delegator.
+  string address = 1;
+  // from_pool is the unique ID of the pool the user withdraws its delegation from
+  uint64 from_pool = 2;
+  // from_node is the account address of the protocol node the users withdraws from.
+  string from_node = 3;
+  // pool_id is the unique ID of the pool of the new pool the user delegates to
+  uint64 to_pool = 4;
+  // address is the account address of the new staker in the the pool
+  string to_node = 5;
+  // amount ...
+  uint64 amount = 6;
 }
 
 // ---------- Funding Events ----------
@@ -151,14 +174,22 @@ message EventUpdateMetadata {
   uint64 pool_id = 1;
   // address is the account address of the protocol node.
   string address = 2;
+  // moniker ...
+  string moniker = 3;
+  // website ...
+  string website = 4;
+  // logo ...
+  string logo = 5;
+}
+
+// EventUpdateCommission ...
+message EventUpdateCommission {
+  // pool_id is the unique ID of the pool.
+  uint64 pool_id = 1;
+  // address is the account address of the protocol node.
+  string address = 2;
   // commission ...
   string commission = 3;
-  // moniker ...
-  string moniker = 4;
-  // website ...
-  string website = 5;
-  // logo ...
-  string logo = 6;
 }
 
 // ---------- Staking Events ----------
@@ -181,4 +212,14 @@ message EventUnstakePool {
   string address = 2;
   // amount ...
   uint64 amount = 3;
+}
+
+// EventStakerStatusChanged ...
+message EventStakerStatusChanged {
+  // pool_id is the unique ID of the pool.
+  uint64 pool_id = 1;
+  // address is the account address of the protocol node.
+  string address = 2;
+  // amount ...
+  StakerStatus status = 3;
 }

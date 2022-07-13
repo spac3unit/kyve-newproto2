@@ -13,17 +13,6 @@ type F1Distribution struct {
 	delegatorAddress string
 }
 
-func CreateF1(k Keeper, ctx sdk.Context, poolId uint64, stakerAddress string, delegatorAddress string) (f1 F1Distribution) {
-	f1 = F1Distribution{
-		k:                k,
-		ctx:              ctx,
-		poolId:           poolId,
-		stakerAddress:    stakerAddress,
-		delegatorAddress: delegatorAddress,
-	}
-	return
-}
-
 func (f1 F1Distribution) updateEntries(
 	fMinus1Index uint64,
 	currentRewards uint64,

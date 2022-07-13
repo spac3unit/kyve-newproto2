@@ -12,3 +12,4 @@ var PausePoolHandler = govclient.NewProposalHandler(cli.CmdSubmitPausePoolPropos
 var UnpausePoolHandler = govclient.NewProposalHandler(cli.CmdSubmitUnpausePoolProposal, rest.ProposalUnpausePoolRESTHandler)
 var SchedulePoolUpgradeHandler = govclient.NewProposalHandler(cli.CmdSubmitSchedulePoolUpgradeProposal, rest.ProposalSchedulePoolUpgradeRESTHandler)
 var CancelPoolUpgradeHandler = govclient.NewProposalHandler(cli.CmdSubmitCancelPoolUpgradeProposal, rest.ProposalCancelPoolUpgradeRESTHandler)
+var ResetPoolHandler = govclient.NewProposalHandler(cli.CmdSubmitResetPoolProposal, rest.ProposalResetPoolRESTHandler)

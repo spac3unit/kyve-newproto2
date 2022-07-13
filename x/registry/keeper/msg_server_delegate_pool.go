@@ -5,81 +5,36 @@ import (
 
 	"github.com/KYVENetwork/chain/x/registry/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	sdkErrors "github.com/cosmos/cosmos-sdk/types/errors"
 )
 
-// DelegatePool handles the logic of an SDK message that allows delegation to a protocol node from a specified pool.
+// DelegatePool handles the logic of an SDK message that allows
+// delegation to a protocol node from a specified pool.
 func (k msgServer) DelegatePool(
 	goCtx context.Context, msg *types.MsgDelegatePool,
 ) (*types.MsgDelegatePoolResponse, error) {
 	// Unwrap context and attempt to fetch the pool.
 	ctx := sdk.UnwrapSDKContext(goCtx)
-	pool, found := k.GetPool(ctx, msg.Id)
 
-	// Error if the pool isn't found.
-	if !found {
-		return nil, sdkErrors.Wrapf(sdkErrors.ErrNotFound, types.ErrPoolNotFound.Error(), msg.Id)
+	// Performs logical delegation without transferring the amount
+	err := k.Delegate(ctx, msg.Staker, msg.Id, msg.Creator, msg.Amount)
+	if err != nil {
+		return nil, err
 	}
 
-	// Check if the sender is delegating to themselves.
-	if msg.Creator == msg.Staker {
-		return nil, sdkErrors.Wrap(sdkErrors.ErrUnauthorized, types.ErrSelfDelegation.Error())
-	}
-
-	// Create a new F1Distribution struct for interacting with delegations.
-	f1Distribution := F1Distribution{
-		k:                k.Keeper,
-		ctx:              ctx,
-		poolId:           msg.Id,
-		stakerAddress:    msg.Staker,
-		delegatorAddress: msg.Creator,
-	}
-
-	// Check if the sender is already a delegator.
-	_, delegatorExists := k.GetDelegator(ctx, msg.Id, msg.Staker, msg.Creator)
-
-	if delegatorExists {
-		// If the sender is already a delegator, first perform an undelegation, before then delegating.
-		reward := f1Distribution.Withdraw()
-		err := k.TransferToAddress(ctx, msg.Creator, reward)
-		if err != nil {
-			return nil, err
-		}
-
-		// Perform redelegation
-		unDelegateAmount := f1Distribution.Undelegate()
-		f1Distribution.Delegate(unDelegateAmount + msg.Amount)
-
-		// Transfer tokens from sender to this module.
-		err = k.transferToRegistry(ctx, msg.Creator, msg.Amount)
-		if err != nil {
-			return nil, err
-		}
-	} else {
-		// If the sender isn't already a delegator, simply create a new delegation entry.
-		f1Distribution.Delegate(msg.Amount)
-
-		// Transfer tokens from sender to this module.
-		err := k.transferToRegistry(ctx, msg.Creator, msg.Amount)
-		if err != nil {
-			return nil, err
-		}
+	// Transfer tokens from sender to this module.
+	if transferErr := k.transferToRegistry(ctx, msg.Creator, msg.Amount); transferErr != nil {
+		return nil, err
 	}
 
 	// Emit a delegation event.
-	errEmit := ctx.EventManager().EmitTypedEvent(&types.EventDelegatePool{
-		PoolId:  pool.Id,
+	if errEmit := ctx.EventManager().EmitTypedEvent(&types.EventDelegatePool{
+		PoolId:  msg.Id,
 		Address: msg.Creator,
 		Node:    msg.Staker,
 		Amount:  msg.Amount,
-	})
-	if errEmit != nil {
+	}); errEmit != nil {
 		return nil, errEmit
 	}
-
-	// Update and return.
-	pool.TotalDelegation += msg.Amount
-	k.SetPool(ctx, pool)
 
 	return &types.MsgDelegatePoolResponse{}, nil
 }

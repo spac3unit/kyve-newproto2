@@ -90,7 +90,7 @@ func (gs GenesisState) Validate() error {
 	proposalIndexMap := make(map[string]struct{})
 
 	for _, elem := range gs.ProposalList {
-		index := string(ProposalKey(elem.BundleId))
+		index := string(ProposalKey(elem.StorageId))
 		if _, ok := proposalIndexMap[index]; ok {
 			return fmt.Errorf("duplicated index for proposal")
 		}

@@ -23,7 +23,7 @@ func CmdVoteProposal() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			argBundleId := args[1]
+			argStorageId := args[1]
 			argVote, err := cast.ToUint64E(args[2])
 			if err != nil {
 				return err
@@ -37,7 +37,7 @@ func CmdVoteProposal() *cobra.Command {
 			msg := types.NewMsgVoteProposal(
 				clientCtx.GetFromAddress().String(),
 				argId,
-				argBundleId,
+				argStorageId,
 				types.VoteType(argVote),
 			)
 			if err := msg.ValidateBasic(); err != nil {

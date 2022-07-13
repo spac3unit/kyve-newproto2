@@ -19,6 +19,8 @@ service Msg {
 
   // StakePool ...
   rpc StakePool(MsgStakePool) returns (MsgStakePoolResponse);
+  // MsgReactivateStaker ...
+  rpc ReactivateStaker(MsgReactivateStaker) returns (MsgReactivateStakerResponse);
   // UnstakePool ...
   rpc UnstakePool(MsgUnstakePool) returns (MsgUnstakePoolResponse);
 
@@ -30,6 +32,8 @@ service Msg {
   rpc WithdrawPool(MsgWithdrawPool) returns (MsgWithdrawPoolResponse);
   // UndelegatePool ...
   rpc UndelegatePool(MsgUndelegatePool) returns (MsgUndelegatePoolResponse);
+  // RedelegatePool ...
+  rpc RedelegatePool(MsgRedelegatePool) returns (MsgRedelegatePoolResponse);
 
   // POOL Query for protocol nodes
 
@@ -41,6 +45,8 @@ service Msg {
   rpc ClaimUploaderRole(MsgClaimUploaderRole) returns (MsgClaimUploaderRoleResponse);
   // UpdateMetadata ...
   rpc UpdateMetadata(MsgUpdateMetadata) returns (MsgUpdateMetadataResponse);
+  // UpdateCommission ...
+  rpc UpdateCommission(MsgUpdateCommission) returns (MsgUpdateCommissionResponse);
 }
 
 // (DE)FUNDING
@@ -85,6 +91,17 @@ message MsgStakePool {
 
 // MsgStakePoolResponse defines the Msg/StakePool response type.
 message MsgStakePoolResponse {}
+
+// MsgReactivateStaker ...
+message MsgReactivateStaker {
+  // creator ...
+  string creator = 1;
+  // id ...
+  uint64 pool_id = 2;
+}
+
+// MsgReactivateStakerResponse ...
+message MsgReactivateStakerResponse {}
 
 // MsgUnstakePool defines a SDK message for unstaking from a pool.
 message MsgUnstakePool {
@@ -144,6 +161,26 @@ message MsgUndelegatePool {
 // MsgUndelegatePoolResponse defines the Msg/UndelegatePool response type.
 message MsgUndelegatePoolResponse {}
 
+// MsgRedelegatePool defines a SDK message for redelegating from a
+// staker in a pool to another staker in the same or another pool
+message MsgRedelegatePool {
+  // creator ...
+  string creator = 1;
+  // id ...
+  uint64 from_pool_id = 2;
+  // staker ...
+  string from_staker = 3;
+  // id ...
+  uint64 to_pool_id = 4;
+  // staker ...
+  string to_staker = 5;
+  // amount ...
+  uint64 amount = 6;
+}
+
+// MsgUndelegatePoolResponse defines the Msg/UndelegatePool response type.
+message MsgRedelegatePoolResponse {}
+
 // POOL
 
 // MsgSubmitBundleProposal defines a SDK message for submitting a bundle proposal.
@@ -152,8 +189,8 @@ message MsgSubmitBundleProposal {
   string creator = 1;
   // id ...
   uint64 id = 2;
-  // bundle_id ...
-  string bundle_id = 3;
+  // storage_id ...
+  string storage_id = 3;
   // byte_size ...
   uint64 byte_size = 4;
   // from_height
@@ -166,6 +203,8 @@ message MsgSubmitBundleProposal {
   string to_key = 8;
   // to_value ...
   string to_value = 9;
+  // bundle_hash ...
+  string bundle_hash = 10;
 }
 
 // MsgSubmitBundleProposalResponse defines the Msg/SubmitBundleProposal response type.
@@ -191,8 +230,8 @@ message MsgVoteProposal {
   string creator = 1;
   // id ...
   uint64 id = 2;
-  // bundle_id ...
-  string bundle_id = 3;
+  // storage_id ...
+  string storage_id = 3;
   // vote ...
   VoteType vote = 4;
 }
@@ -217,15 +256,26 @@ message MsgUpdateMetadata {
   string creator = 1;
   // id ...
   uint64 id = 2;
-  // commission ...
-  string commission = 3;
   // moniker ...
-  string moniker = 4;
+  string moniker = 3;
   // website ...
-  string website = 5;
+  string website = 4;
   // logo
-  string logo = 6;
+  string logo = 5;
 }
 
 // MsgUpdateMetadataResponse defines the Msg/MsgUpdateMetadata response type.
 message MsgUpdateMetadataResponse {}
+
+// ...
+message MsgUpdateCommission {
+  // creator ...
+  string creator = 1;
+  // id ...
+  uint64 id = 2;
+  // commission ...
+  string commission = 3;
+}
+
+// ...
+message MsgUpdateCommissionResponse {}
