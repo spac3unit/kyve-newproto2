@@ -32,7 +32,7 @@ func (k msgServer) ReactivateStaker(
 		return nil, sdkErrors.Wrapf(sdkErrors.ErrNotFound, types.ErrNoStaker.Error())
 	}
 
-	if len(pool.Stakers) == types.MaxStakers {
+	if len(pool.Stakers) >= types.MaxStakers {
 		lowestStaker, _ := k.GetStaker(ctx, pool.LowestStaker, msg.PoolId)
 
 		if staker.Amount > lowestStaker.Amount {
@@ -61,6 +61,7 @@ func (k msgServer) ReactivateStaker(
 	staker.Status = types.STAKER_STATUS_ACTIVE
 
 	k.SetStaker(ctx, staker)
+	k.updateLowestStaker(ctx, &pool)
 	k.SetPool(ctx, pool)
 
 	// Emit a delegation event.

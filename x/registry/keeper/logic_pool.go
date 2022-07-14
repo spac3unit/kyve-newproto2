@@ -1,7 +1,6 @@
 package keeper
 
 import (
-	"fmt"
 	"math"
 	"math/rand"
 	"sort"
@@ -96,6 +95,10 @@ func (k Keeper) updateLowestFunder(ctx sdk.Context, pool *types.Pool) {
 	}
 
 	pool.LowestFunder = minFunder
+}
+
+func (k Keeper) UpdateLowestStaker(ctx sdk.Context, pool *types.Pool) {
+	k.updateLowestStaker(ctx, pool)
 }
 
 // updateLowestStaker is an internal function that updates the lowest staker entry in a given pool.
@@ -356,10 +359,10 @@ func (k Keeper) getVoteDistribution(ctx sdk.Context, pool *types.Pool) (valid ui
 		total = pool.TotalStake
 	}
 
-	// halt if nodes voted with more stake than in total
-	if valid+invalid+abstain > total {
-		k.PanicHalt(ctx, fmt.Sprintf("Voted with more $KYVE than staked. Voted = %v, Total Stake = %v", valid+invalid+abstain, total))
-	}
+	//// halt if nodes voted with more stake than in total
+	//if valid+invalid+abstain > total {
+	//	k.PanicHalt(ctx, fmt.Sprintf("Voted with more $KYVE than staked. Voted = %v, Total Stake = %v", valid+invalid+abstain, total))
+	//}
 
 	return
 }
