@@ -62,18 +62,16 @@ func (k msgServer) StakePool(goCtx context.Context, msg *types.MsgStakePool) (*t
 	}
 
 	// Transfer tokens from sender to this module.
-	err := k.transferToRegistry(ctx, msg.Creator, msg.Amount)
-	if err != nil {
+	if err := k.transferToRegistry(ctx, msg.Creator, msg.Amount); err != nil {
 		return nil, err
 	}
 
 	// Event a stake event.
-	errEmit := ctx.EventManager().EmitTypedEvent(&types.EventStakePool{
+	if errEmit := ctx.EventManager().EmitTypedEvent(&types.EventStakePool{
 		PoolId:  msg.Id,
 		Address: msg.Creator,
 		Amount:  msg.Amount,
-	})
-	if errEmit != nil {
+	}); errEmit != nil {
 		return nil, errEmit
 	}
 

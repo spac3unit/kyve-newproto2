@@ -10,14 +10,11 @@ import (
 )
 
 // ReactivateStaker ...
-func (k msgServer) ReactivateStaker(
-	goCtx context.Context, msg *types.MsgReactivateStaker,
-) (*types.MsgReactivateStakerResponse, error) {
+func (k msgServer) ReactivateStaker(goCtx context.Context, msg *types.MsgReactivateStaker) (*types.MsgReactivateStakerResponse, error) {
 	// Unwrap context and attempt to fetch the pool.
 	ctx := sdk.UnwrapSDKContext(goCtx)
 
 	pool, found := k.GetPool(ctx, msg.PoolId)
-	// Error if the pool isn't found.
 	if !found {
 		return nil, sdkErrors.Wrapf(sdkErrors.ErrNotFound, types.ErrPoolNotFound.Error(), msg.PoolId)
 	}
@@ -28,10 +25,10 @@ func (k msgServer) ReactivateStaker(
 	}
 
 	if staker.Status != types.STAKER_STATUS_INACTIVE {
-		// TODO custom error
-		return nil, sdkErrors.Wrapf(sdkErrors.ErrNotFound, types.ErrNoStaker.Error())
+		return nil, sdkErrors.Wrapf(sdkErrors.ErrNotFound, types.ErrStakerNotInactive.Error())
 	}
 
+	// Try to kick out lowest staker if active stakers list is already full.
 	if len(pool.Stakers) >= types.MaxStakers {
 		lowestStaker, _ := k.GetStaker(ctx, pool.LowestStaker, msg.PoolId)
 

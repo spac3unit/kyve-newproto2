@@ -11,9 +11,7 @@ import (
 // ClaimUploaderRole handles the logic of an SDK message that allows protocol nodes to claim the uploader role.
 // Note that this function can only be called while the specified pool is in "genesis state".
 // This function obeys "first come, first serve" mentality.
-func (k msgServer) ClaimUploaderRole(
-	goCtx context.Context, msg *types.MsgClaimUploaderRole,
-) (*types.MsgClaimUploaderRoleResponse, error) {
+func (k msgServer) ClaimUploaderRole(goCtx context.Context, msg *types.MsgClaimUploaderRole) (*types.MsgClaimUploaderRoleResponse, error) {
 	// Unwrap context and attempt to fetch the pool.
 	ctx := sdk.UnwrapSDKContext(goCtx)
 	pool, found := k.GetPool(ctx, msg.Id)

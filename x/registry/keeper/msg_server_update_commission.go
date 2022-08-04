@@ -38,7 +38,6 @@ func (k msgServer) UpdateCommission(
 	}
 
 	if orderErr := k.orderNewCommissionChange(ctx, msg.Id, msg.Creator, msg.Commission); orderErr != nil {
-		// TODO generic error
 		return nil, sdkErrors.Wrapf(sdkErrors.ErrLogic, types.ErrInvalidCommission.Error(), msg.Commission)
 	}
 

@@ -118,9 +118,7 @@ func (k msgServer) VoteProposal(
 	} else if msg.Vote == types.VOTE_TYPE_ABSTAIN {
 		pool.BundleProposal.VotersAbstain = append(pool.BundleProposal.VotersAbstain, msg.Creator)
 	} else {
-		return nil, sdkErrors.Wrapf(
-			sdkErrors.ErrUnauthorized, types.ErrInvalidVote.Error(), msg.Vote,
-		)
+		return nil, sdkErrors.Wrapf(sdkErrors.ErrUnauthorized, types.ErrInvalidVote.Error(), msg.Vote)
 	}
 
 	// reset points
@@ -128,13 +126,12 @@ func (k msgServer) VoteProposal(
 	k.SetStaker(ctx, staker)
 
 	// Emit a vote event.
-	err := ctx.EventManager().EmitTypedEvent(&types.EventBundleVote{
-		PoolId:   msg.Id,
-		Address:  msg.Creator,
+	if err := ctx.EventManager().EmitTypedEvent(&types.EventBundleVote{
+		PoolId:    msg.Id,
+		Address:   msg.Creator,
 		StorageId: msg.StorageId,
-		Vote:     msg.Vote,
-	})
-	if err != nil {
+		Vote:      msg.Vote,
+	}); err != nil {
 		return nil, err
 	}
 

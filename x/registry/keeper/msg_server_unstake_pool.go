@@ -19,8 +19,7 @@ func (k msgServer) UnstakePool(
 		return nil, sdkErrors.Wrapf(sdkErrors.ErrNotFound, types.ErrPoolNotFound.Error(), msg.Id)
 	}
 
-	err := k.StartUnbondingStaker(ctx, msg.Id, msg.Creator, msg.Amount)
-	if err != nil {
+	if err := k.StartUnbondingStaker(ctx, msg.Id, msg.Creator, msg.Amount); err != nil {
 		return nil, sdkErrors.Wrapf(sdkErrors.ErrLogic, types.ErrUnstakeTooHigh.Error(), msg.Id)
 	}
 

@@ -16,14 +16,13 @@ func (k msgServer) DelegatePool(
 	ctx := sdk.UnwrapSDKContext(goCtx)
 
 	// Performs logical delegation without transferring the amount
-	err := k.Delegate(ctx, msg.Staker, msg.Id, msg.Creator, msg.Amount)
-	if err != nil {
+	if err := k.Delegate(ctx, msg.Staker, msg.Id, msg.Creator, msg.Amount); err != nil {
 		return nil, err
 	}
 
 	// Transfer tokens from sender to this module.
 	if transferErr := k.transferToRegistry(ctx, msg.Creator, msg.Amount); transferErr != nil {
-		return nil, err
+		return nil, transferErr
 	}
 
 	// Emit a delegation event.
