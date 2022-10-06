@@ -64,6 +64,8 @@ message Protocol {
   string binaries = 2;
   // last_upgrade ...
   uint64 last_upgrade = 3;
+  // test
+  string test = 4;
 }
 
 // Upgrade ...

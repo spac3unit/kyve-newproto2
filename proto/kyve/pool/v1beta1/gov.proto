@@ -1,0 +1,107 @@
+syntax = "proto3";
+
+package kyve.pool.v1beta1;
+
+option go_package = "github.com/KYVENetwork/chain/x/pool/types";
+
+// CreatePoolProposal is a gov Content type for creating a pool.
+message CreatePoolProposal {
+  option deprecated = true;
+
+  // title ...
+  string title = 1;
+  // description ...
+  string description = 2;
+  // name ...
+  string name = 3;
+  // runtime ...
+  string runtime = 4;
+  // logo ...
+  string logo = 5;
+  // config ...
+  string config = 6;
+  // start_key ...
+  string start_key = 7;
+  // upload_interval ...
+  uint64 upload_interval = 8;
+  // operating_cost ...
+  uint64 operating_cost = 9;
+  // min_stake ...
+  uint64 min_stake = 10;
+  // max_bundle_size ...
+  uint64 max_bundle_size = 11;
+  // version ...
+  string version = 12;
+  // binaries ...
+  string binaries = 13;
+}
+
+// UpdatePoolProposal is a gov Content type for updating a pool.
+message UpdatePoolProposal {
+  option deprecated = true;
+
+  // title ...
+  string title = 1;
+  // description ...
+  string description = 2;
+  // id ...
+  uint64 id = 3;
+  // payload
+  string payload = 4;
+}
+
+// PausePoolProposal is a gov Content type for pausing a pool.
+message PausePoolProposal {
+  option deprecated = true;
+
+  // title ...
+  string title = 1;
+  // description ...
+  string description = 2;
+  // id ...
+  uint64 id = 3;
+}
+
+// UnpausePoolProposal is a gov Content type for unpausing a pool.
+message UnpausePoolProposal {
+  option deprecated = true;
+
+  // title ...
+  string title = 1;
+  // description ...
+  string description = 2;
+  // id ...
+  uint64 id = 3;
+}
+
+// SchedulePoolUpgradeProposal is a gov Content type for upgrading a pool by the runtime.
+message SchedulePoolUpgradeProposal {
+  option deprecated = true;
+
+  // title ...
+  string title = 1;
+  // description ...
+  string description = 2;
+  // runtime ...
+  string runtime = 3;
+  // version ...
+  string version = 4;
+  // scheduled_at ...
+  uint64 scheduled_at = 5;
+  // duration ...
+  uint64 duration = 6;
+  // binaries ...
+  string binaries = 7;
+}
+
+// CancelPoolUpgradeProposal is a gov Content type for cancelling a scheduled pool upgrade by the runtime.
+message CancelPoolUpgradeProposal {
+  option deprecated = true;
+
+  // title ...
+  string title = 1;
+  // description ...
+  string description = 2;
+  // runtime ...
+  string runtime = 3;
+}

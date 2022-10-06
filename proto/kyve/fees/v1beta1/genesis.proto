@@ -1,0 +1,14 @@
+syntax = "proto3";
+
+package kyve.fees.v1beta1;
+
+import "gogoproto/gogo.proto";
+import "kyve/fees/v1beta1/fees.proto";
+
+option go_package = "github.com/KYVENetwork/chain/x/fees/types";
+
+// GenesisState defines the fees module's genesis state.
+message GenesisState {
+  // params defines all the parameters of the module.
+  Params params = 1 [(gogoproto.nullable) = false];
+}

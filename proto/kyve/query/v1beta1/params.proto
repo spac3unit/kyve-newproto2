@@ -1,0 +1,51 @@
+syntax = "proto3";
+
+package kyve.query.v1beta1;
+
+import "cosmos/gov/v1/gov.proto";
+import "google/api/annotations.proto";
+import "kyve/bundles/v1beta1/params.proto";
+import "kyve/delegation/v1beta1/params.proto";
+import "kyve/fees/v1beta1/fees.proto";
+import "kyve/stakers/v1beta1/params.proto";
+
+option go_package = "github.com/KYVENetwork/chain/x/query/types";
+
+// QueryPool ...
+service QueryParams {
+  // Pools queries for all pools.
+  rpc Params(QueryParamsRequest) returns (QueryParamsResponse) {
+    option (google.api.http).get = "/kyve/query/v1beta1/params";
+  }
+}
+
+// =======
+// /params
+// =======
+
+// QueryParamsRequest ...
+message QueryParamsRequest {}
+
+// QueryParamsResponse ...
+message QueryParamsResponse {
+  // bundles_params ...
+  kyve.bundles.v1beta1.Params bundles_params = 1;
+  // delegation_params ...
+  kyve.delegation.v1beta1.Params delegation_params = 2;
+  // fees_params ...
+  kyve.fees.v1beta1.Params fees_params = 3;
+  // gov_params ...
+  GovParams gov_params = 4;
+  // stakers_params ...
+  kyve.stakers.v1beta1.Params stakers_params = 5;
+}
+
+// GovParams ...
+message GovParams {
+  // deposit_params ...
+  cosmos.gov.v1.DepositParams deposit_params = 1;
+  // tally_params ...
+  cosmos.gov.v1.TallyParams tally_params = 2;
+  // voting_params ...
+  cosmos.gov.v1.VotingParams voting_params = 3;
+}

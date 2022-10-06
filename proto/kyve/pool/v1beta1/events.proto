@@ -1,0 +1,69 @@
+syntax = "proto3";
+
+package kyve.pool.v1beta1;
+
+option go_package = "github.com/KYVENetwork/chain/x/pool/types";
+
+// EventCreatePool ...
+message EventCreatePool {
+  // id ...
+  uint64 id = 1;
+  // name ...
+  string name = 2;
+  // runtime ...
+  string runtime = 3;
+  // logo ...
+  string logo = 4;
+  // config ...
+  string config = 5;
+  // start_key ...
+  string start_key = 6;
+  // upload_interval ...
+  uint64 upload_interval = 7;
+  // operating_cost ...
+  uint64 operating_cost = 8;
+  // min_stake ...
+  uint64 min_stake = 9;
+  // max_bundle_size ...
+  uint64 max_bundle_size = 10;
+  // version ...
+  string version = 11;
+  // binaries ...
+  string binaries = 12;
+}
+
+// EventFundPool is an event emitted when a pool is funded.
+message EventFundPool {
+  // pool_id is the unique ID of the pool.
+  uint64 pool_id = 1;
+  // address is the account address of the pool funder.
+  string address = 2;
+  // amount ...
+  uint64 amount = 3;
+}
+
+// EventDefundPool is an event emitted when a pool is defunded.
+message EventDefundPool {
+  // pool_id is the unique ID of the pool.
+  uint64 pool_id = 1;
+  // address is the account address of the pool funder.
+  string address = 2;
+  // amount ...
+  uint64 amount = 3;
+}
+
+// EventDefundPool is an event emitted when a pool is defunded.
+message EventPoolFundsSlashed {
+  // pool_id is the unique ID of the pool.
+  uint64 pool_id = 1;
+  // address is the account address of the pool funder.
+  string address = 2;
+  // amount ...
+  uint64 amount = 3;
+}
+
+// EventPoolOutOfFunds is an event emitted when a pool has run out of funds
+message EventPoolOutOfFunds {
+  // pool_id is the unique ID of the pool.
+  uint64 pool_id = 1;
+}

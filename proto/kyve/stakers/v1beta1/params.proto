@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+package kyve.stakers.v1beta1;
+
+option go_package = "github.com/KYVENetwork/chain/x/stakers/types";
+
+// Params defines the stakers module parameters.
+message Params {
+  // vote_slash ...
+  string vote_slash = 1;
+  // upload_slash ...
+  string upload_slash = 2;
+  // timeout_slash ...
+  string timeout_slash = 3;
+  // unbonding_staking_time ...
+  uint64 unbonding_staking_time = 4;
+  // commission_change_time ...
+  uint64 commission_change_time = 5;
+  // commission_change_time ...
+  uint64 leave_pool_time = 6;
+}

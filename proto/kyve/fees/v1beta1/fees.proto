@@ -1,0 +1,44 @@
+syntax = "proto3";
+
+package kyve.fees.v1beta1;
+
+import "gogoproto/gogo.proto";
+
+option go_package = "github.com/KYVENetwork/chain/x/fees/types";
+
+// Params defines the fees module parameters.
+message Params {
+  // min_gas_price defines the minimum gas price value for all transactions.
+  string min_gas_price = 1 [
+    (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Dec",
+    (gogoproto.nullable) = false
+  ];
+  // burn_ratio defines the ratio of transaction fees burnt.
+  string burn_ratio = 2 [
+    (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Dec",
+    (gogoproto.nullable) = false
+  ];
+  // gas_adjustments ...
+  repeated GasAdjustment gas_adjustments = 3 [(gogoproto.nullable) = false];
+  // gas_refunds ...
+  repeated GasRefund gas_refunds = 4 [(gogoproto.nullable) = false];
+}
+
+// GasAdjustment ...
+message GasAdjustment {
+  // type ...
+  string type = 1;
+  // amount ...
+  uint64 amount = 2;
+}
+
+// GasRefund ...
+message GasRefund {
+  // type ...
+  string type = 1;
+  // fraction ...
+  string fraction = 2 [
+    (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Dec",
+    (gogoproto.nullable) = false
+  ];
+}
